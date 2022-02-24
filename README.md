@@ -60,22 +60,23 @@ jobs:
       - run:
           name: Copy tests results for storing
           command: |
-            cp test-results.xml /test-results/
+            cp test-results.xml test-results/
           when: always
       - store_test_results:
-          path: /test-results
+          path: test-results
       - store_artifacts:
-          path: /test-results
+          path: test-results
 ```
 
 - 🚨 Error! Fix error by SSHing into the failed job 👩‍💻
-- Discover that we missed a `mkdir /test-results`:
+- Discover that we missed a `mkdir test-results`:
 
 ```yaml
  - run:
           name: Copy tests results for storing
           command: |
-            cp test-results.xml /test-results/
+            mkdir test-results
+            cp test-results.xml test-results/
           when: always
 
 ```
