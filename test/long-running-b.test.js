@@ -11,7 +11,7 @@ describe("Long running test file B", function() {
     })
     it("Should wait for 2 seconds 2", async () => {
 
-        await delay(randomValue(8000))
+        await delay(randomValue(2000))
 
         assert.ok(true)
     })
