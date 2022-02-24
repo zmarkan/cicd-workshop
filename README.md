@@ -139,6 +139,8 @@ jobs:
 
 - Now let's integrate a security scanning tool in our process. We will use Snyk - https://snyk.io for this. You can create a free Snyk account by logging in with your GitHub credentials. Get a Snyk Auth token by going to your Account Settings - https://app.snyk.io/account.
 
+- Add the Auth token to your environment variables - `SNYK_TOKEN`
+
 - Add Snyk orb: 
 
 ```yaml
@@ -172,6 +174,9 @@ workflows:
       - dependency-vulnerability-scan
 
 ```
+
+### Build a Docker image
+
 
 - Create 
 
