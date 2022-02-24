@@ -99,3 +99,6 @@ jobs:
             command: npm run test-ci
 
 ```
+
+Congratulations, you've done the first part of the exercise!
+If you get lost, the final state is in `.circleci/chapters/config_1.yml`, and you can restore it by running `
