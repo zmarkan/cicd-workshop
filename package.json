@@ -8,7 +8,7 @@
   },
   "scripts": {
     "start": "node app.js",
-    "test": "mocha \"./test/sample.test.js\"",
+    "test": "mocha",
     "test-ci": "mocha --reporter mocha-junit-reporter",
     "flaky-test": "mocha --reporter mocha-junit-reporter \"flaky-test\""
   },
