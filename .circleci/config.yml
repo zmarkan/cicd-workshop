@@ -1,7 +1,6 @@
 version: 2.1
 
 jobs:
-
   build-and-test:
     docker:
       - image: cimg/node:16.14.0
@@ -13,6 +12,15 @@ jobs:
       - run:
           name: Run tests
           command: npm run test-ci
+      - run:
+          name: Copy tests results for storing
+          command: |
+            cp test-results.xml /test-results/
+          when: always
+      - store_test_results:
+          path: /test-results
+      - store_artifacts:
+          path: /test-results
       
 workflows:
   run-tests:

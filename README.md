@@ -16,15 +16,64 @@ To begin, prepare your environment for the initial state by running the start sc
 Go to app.circleci.com, log in with your GitHub account (or create a new one).
 Navigate to the `Projects` tab, and find this workshop project there - `cicd-workshop`.
 
-First we will create a basic continuous integration pipeline, which will run your tests each time you commit some code.
-- Run: `./scripts/chapter_0_start.sh`
-- In the `.circleci/config.yaml` find the `jobs` section, and add a job called `build`:
+First we will create a basic continuous integration pipeline, which will run your tests each time you commit some code. Run a commit for each instruction.
+
+- Run: `./scripts/chapter_0_start.sh` to create the environment.
+- In the `.circleci/config.yaml` find the `jobs` section, and add a job called `build-and-test`:
 
 ```yaml
 ...
 jobs:
-    build
-
-
+  build-and-test:
+    docker:
+      - image: cimg/node:16.14.0
+    steps:
+      - checkout
+      - run:
+          name: Install deps
+          command: npm install
+      - run:
+          name: Run tests
+          command: npm run test-ci
 ```
 
+- Now let's create a workflow that will run our job: 
+
+```yaml
+workflows:
+  run-tests:
+    jobs:
+      - build-and-test
+```
+
+- Report test results to CircleCI. Add the following run commands to `build-and-test` job:
+
+```yaml
+jobs:
+  build-and-test:
+    ...
+      - run:
+          name: Run tests
+          command: npm run test-ci
+      - run:
+          name: Copy tests results for storing
+          command: |
+            cp test-results.xml /test-results/
+          when: always
+      - store_test_results:
+          path: /test-results
+      - store_artifacts:
+          path: /test-results
+```
+
+- 🚨 Error! Fix error by SSHing into the failed job 👩‍💻
+- Discover that we missed a `mkdir /test-results`:
+
+```yaml
+ - run:
+          name: Copy tests results for storing
+          command: |
+            cp test-results.xml /test-results/
+          when: always
+
+```
