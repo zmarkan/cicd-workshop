@@ -1,7 +1,7 @@
 const axios = require('axios').default
 const assert = require('assert')
 const helloWorld = require("../app.js")
-const base_url = "http://localhost:5000/"
+const base_url = "http://localhost:3232/"
 
 describe("Welcome to CI/CD Server", function() {
 
