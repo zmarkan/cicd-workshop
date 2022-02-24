@@ -177,6 +177,12 @@ workflows:
 
 ### Build a Docker image
 
+- Add the Docker orb:
+
+```yaml
+
+
+```
 
 - Create 
 
