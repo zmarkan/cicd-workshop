@@ -3,10 +3,12 @@
 ## Prerequisites
 
 Knowledge of Git version control system
+
 GitHub account - where the code is hosted
+
 A code editor
 
-## Chapter 1 - the basics
+## Chapter 1 - Basics of CircleCI
 
 Fork this project!
 Most of our work will be in `./circleci/config.yml` - the CircleCI configuration file. This is where we will be describing our CI/CD pipelines.
@@ -100,5 +102,86 @@ jobs:
 
 ```
 
-Congratulations, you've done the first part of the exercise!
-If you get lost, the final state is in `.circleci/chapters/config_1.yml`, and you can restore it by running `
+🎉 Congratulations, you've completed the first part of the exercise!
+
+## Chapter 2 - Intermediate CI/CD
+
+In this section you will learn about the CircleCI orbs, and various other types of checks you can implement, as well as deploy your application!
+
+If you got lost in the previous chapter, the initial state of the configuration is in `.circleci/chapters/config_1.yml`. You can restore it by running `./scripts/chapter_1.sh`.
+
+### Use Node orb
+
+- First let's replace our existing process for dependency installation and running tests by using an orb - this saves you a lot of configuration and manages caching for you. Introduce the orb: 
+
+```yaml
+version: 2.1
+
+orbs: 
+    node: circleci/node@5.0.0
+```
+
+- Replace the job caching and dependency installation code with the call to the `node/install_packages` in the Node orb:
+
+```yaml
+jobs:
+  build-and-test:
+    ...
+    steps:
+        - checkout
+        - node/install-packages
+        - run:
+            name: Run tests
+            command: npm run test-ci
+```
+
+### Integrate automated dependency vulnerability scan
+
+- Now let's integrate a security scanning tool in our process. We will use Snyk - https://snyk.io for this. You can create a free Snyk account by logging in with your GitHub credentials. Get a Snyk Auth token by going to your Account Settings - https://app.snyk.io/account.
+
+- Add Snyk orb: 
+
+```yaml
+orbs: 
+    node: circleci/node@5.0.0
+    snyk: snyk/snyk@1.1.2
+```
+
+- Add dependency vulnerability scan job:
+
+```yaml
+jobs:
+...
+  dependency-vulnerability-scan:
+    docker:
+      - image: cimg/node:16.14.0
+    steps:
+      - checkout
+      - node/install-packages
+      - snyk/scan:
+          fail-on-issues: true
+```
+
+- Add the job to workflow:
+
+```yaml
+workflows:
+  run-tests:
+    jobs:
+      - build-and-test
+      - dependency-vulnerability-scan
+
+```
+
+- Create 
+
+Implement security scan
+Use orb to install dependencies
+Set up environment variables
+Set up contexts & user groups
+Build image (docker)
+Deploy app (heroku prod)
+
+
+
+## Chapter 3 - Advanced CircleCI

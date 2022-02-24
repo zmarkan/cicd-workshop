@@ -10,14 +10,11 @@ Implement security scan
 Use orb to install dependencies
 Set up environment variables
 Set up contexts & user groups
-
 Build image (docker)
 Deploy app (heroku prod)
 
 Nightly build (deploy)
-
 Split tests to run faster
-
 Deploy to multiple environments (multiple apps)
 Access control using groups
 Approval job to continue
