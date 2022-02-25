@@ -256,7 +256,8 @@ orbs:
 
 ```yaml
 deploy-to-heroku:
-    executor: cimg/base:stable
+    docker: 
+      - image: cimg/base:stable
     steps:
       - heroku/install
       - heroku/check-authentication
