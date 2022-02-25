@@ -178,14 +178,48 @@ workflows:
 
 ### Build a Docker image
 
+Each time the tests pass we will build a Docker image with the web app.
+
+- Create Docker Hub account if you don't already have one - https://docker.com
+- Get add Docker Hub account name to environment variables: `DOCKER_LOGIN`, and `DOCKER_PASSWORD`
 - Add the Docker orb:
+
+```yaml
+orbs: 
+  node: circleci/node@5.0.0
+  snyk: snyk/snyk@1.1.2
+  docker: circleci/docker@2.0.2
+```
+
+- Add a job to build a docker image and push it to Docker Hub
+
+```yaml
+ jobs:
+  ... 
+  build-docker:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - setup_remote_docker
+      - docker/check
+      - docker/build:
+          image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-1-March-22
+          tag: 0.1.<< pipeline.number >>
+      - docker/push:
+          image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-1-March-22
+          tag: 0.1.<< pipeline.number >>
+```
+
+- Add job to workflow, and make sure it `requires` the prior test security scan jobs to complete
 
 ```yaml
 
 
 ```
 
-- Create 
+- 
+
 
 Implement security scan
 Use orb to install dependencies
