@@ -176,7 +176,7 @@ workflows:
 
 ```
 
-### Build a Docker image
+### Build a Docker image & Deploy it to the registry
 
 Each time the tests pass we will build a Docker image with the web app.
 
@@ -211,14 +211,80 @@ orbs:
           tag: 0.1.<< pipeline.number >>
 ```
 
-- Add job to workflow, and make sure it `requires` the prior test security scan jobs to complete
+- Add job to workflow:
 
 ```yaml
-
-
+workflows:
+  run-tests:
+    jobs:
+      - build-and-test
+      - dependency-vulnerability-scan
+      - build-docker
 ```
 
-- 
+- Add `requires` stanza to the job in the workflow, which ensures that verification jobs must complete before building the Docker image.
+
+```yaml
+workflows:
+  run-tests:
+    jobs:
+      - build-and-test
+      - dependency-vulnerability-scan
+      - build-docker:
+          requires:
+            - build-and-test
+            - dependency-vulnerability-scan
+```
+
+### Deploy the containerized application to Heroku
+
+Heroku is a service for hosting applications with a free tier & no card required
+
+- Create a Heroku account & grab your API key, store in environment variable: `HEROKU_API_KEY`
+- Create a Heroku application - I named mine `hello-circleci-connect-dev`
+- Add Heroku orb:
+
+```yaml
+orbs: 
+  node: circleci/node@5.0.0
+  snyk: snyk/snyk@1.1.2
+  docker: circleci/docker@2.0.2
+  heroku: circleci/heroku@1.2.6
+```
+
+- Add deployment job:
+
+```yaml
+deploy-to-heroku:
+    executor: cimg/base:stable
+    steps:
+      - heroku/install
+      - heroku/check-authentication
+      - checkout
+      - heroku/push-docker-image:
+          app-name: hello-circleci-connect-dev
+          process-types: web
+      - heroku/release-docker-image:
+          app-name: hello-circleci-connect-dev
+          process-types: web
+```
+
+- Add job to workflow after image is built:
+
+```yaml
+workflows:
+  run-tests:
+    jobs:
+      - build-and-test
+      - dependency-vulnerability-scan
+      - build-docker:
+          requires:
+            - build-and-test
+            - dependency-vulnerability-scan
+      - deploy-to-heroku:
+          requires:
+            - build-docker
+```
 
 
 Implement security scan
