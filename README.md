@@ -395,16 +395,34 @@ jobs:
 - Only deploy from `main` branch, using `filters` in the workflow:
 
 ```yaml
-
-
+workflows:
+  run-tests:
+    jobs:
+      ...
+      - build-docker:
+          requires:
+            - build-and-test
+            - dependency-vulnerability-scan
+          filters:
+            branches:
+              only: main
+      ...
 ```
+
+Allow jobs fine grained access to credentials by using contexts. 
+
+- In your CircleCI `Organization Settings` tab, create a new context - `workshop_deployment-dev`.
+- Add your `HEROKU_API_KEY` environment variable to this context (same as before)
+- Add 
+- You can now delete `HEROKU_API_KEY` in project settings!
+- 
 
 Parallelism
 Matrix tests
 Split tests to run faster
 
 Filter branches
-Access control using groups
+Access control using groups and contexts
 Approval job to continue
 
 Deploy to multiple environments (multiple apps)
