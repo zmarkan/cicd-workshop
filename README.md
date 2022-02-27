@@ -413,9 +413,45 @@ Allow jobs fine grained access to credentials by using contexts.
 
 - In your CircleCI `Organization Settings` tab, create a new context - `workshop_deployment-dev`.
 - Add your `HEROKU_API_KEY` environment variable to this context (same as before)
-- Add 
+- Specify `context` parameter in the workflow for the `deploy_to_heroku` job:
+
+```yaml
+workflows:
+  run-tests:
+    jobs:
+      ...
+      - deploy-to-heroku:
+          requires:
+            - build-docker
+          context: workshop_deployment-dev
+      ...
+```
+
 - You can now delete `HEROKU_API_KEY` in project settings!
-- 
+- Add approval job before deploying to Heroku:
+
+```yaml
+workflows:
+  run-tests:
+    jobs:
+      ...
+      - build-docker:
+          requires:
+            - build-and-test
+            - dependency-vulnerability-scan
+          filters:
+            branches:
+              only: main
+      - hold-for-approval:
+          type: approval
+          requires: 
+            - build-docker
+      - deploy-to-heroku:
+          requires:
+            - hold-for-approval
+          context: workshop_deployment-dev
+      ...
+```
 
 Parallelism
 Matrix tests
