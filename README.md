@@ -299,27 +299,94 @@ If you got lost in the previous chapter, the initial state of the configuration 
 
 We often want to test the same code across different variants of the application. We can employ matrix with CircleCI for that.
 
-- Create a new job parameter for `build-and-test` job:
+- Create a new job parameter for `build-and-test` job, and use its value in the selected image:
 
 ```yaml
 jobs:
   build-and-test:
-    docker:
-      - image: cimg/node:16.14.0
     parameters:
       node_version:
         type: string
         default: 16.14.0
+    docker:
+      - image: cimg/node:<< parameters.node_version >>
     steps:
       - checkout
-      ...
 ```
 
 - Pass matrix of versions as parameters for the job in the workflow definition:
 
 ```yaml
+workflows:
+  run-tests:
+    jobs:
+      - build-and-test:
+          matrix:
+            parameters:
+              node_version: ["16.14.0", "14.19.0", "17.6.0" ]
+      - dependency-vulnerability-scan
+      ...
+```
 
+This sets up the tests to run in a matrix, in parallel. But we must go further. Our tests still run for too long, so we can split them across multiple jobs.
 
+- Change run test command to use CircleCI's test splitting feature:
+
+```yaml
+...
+jobs:
+  build-and-test:
+    ...
+    steps:
+          - checkout
+          - node/install-packages
+          - run:          
+              name: Run tests
+              command: |
+                echo $(circleci tests glob "test/**/*.test.js")
+                circleci tests glob "test/**/*.test.js" | circleci tests split |
+                xargs npm run test-ci
+          ...
+```
+
+- Set job `parallelism` parameter:
+
+```yaml
+jobs:
+  build-and-test:
+    ...
+    docker:
+      - image: cimg/node:<< parameters.node-version >>
+    parallelism: 4
+    ...
+```
+
+- Make sure test results are merged correctly:
+
+```yaml
+jobs:
+  build-and-test:
+    ...
+    steps:
+          - checkout
+          ...
+          - run:
+              name: Copy tests results for storing
+              command: |
+                mkdir ~/test-results
+                cp test-results.xml ~/test-results/
+              when: always
+          - run:
+              name: Process test report
+              when: always
+              command: |
+                  # Convert absolute paths to relative to support splitting tests by timing
+                  if [ -e ~/test-results.xml ]; then
+                    sed -i "s|`pwd`/||g" ~/test-results.xml
+                  fi
+          - store_test_results:
+              path: test-results
+          ...
 ```
 
 Parallelism
