@@ -453,6 +453,68 @@ workflows:
       ...
 ```
 
+You can also specify a security group to a context (in an org) to only allow those users to continue.
+We can also have multiple deployment environments in different stages, using parameters and contexts.
+
+- Create a new Heroku application - `hello-circleci-connect-prod`
+- Add environment parameter to `deploy_to_heroku` job - `environment`:
+
+```yaml
+deploy-to-heroku:
+    parameters:
+      environment:
+        type: string
+        default: dev
+    ...
+```
+
+- Use the `environment` parameter in the Heroku deployment steps:
+
+```yaml
+  deploy-to-heroku:
+    ...
+    steps:
+      ...
+      - heroku/push-docker-image:
+          app-name: hello-circleci-connect-<< parameters.environment >>
+          process-types: web
+      - heroku/release-docker-image:
+          app-name: hello-circleci-connect-<< parameters.environment >>
+          process-types: web
+```
+
+- Add a new `deploy-to-heroku` job, that doesn't filter on branch to the workflow, and pass `dev` parameter to it:
+
+```yaml
+workflows:
+  run-tests:
+    jobs:
+      ...
+      - dependency-vulnerability-scan
+      - deploy-to-heroku:
+          context: workshop_deployment-dev
+          environment: dev
+      ...
+```
+
+- Add `prod` parameter to the "original" `deploy-to-heroku` job in the workflow:
+
+```yaml
+workflows:
+  run-tests:
+    jobs:
+      ...
+      - hold-for-approval:
+          type: approval
+          requires: 
+            - build-docker
+      - deploy-to-heroku:
+          environment: prod
+          requires:
+            - hold-for-approval
+          context: workshop_deployment-prod
+```
+
 Parallelism
 Matrix tests
 Split tests to run faster
