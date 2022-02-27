@@ -56,6 +56,7 @@ jobs:
     steps:
       - heroku/install
       - heroku/check-authentication
+      - setup_remote_docker
       - checkout
       - heroku/push-docker-image:
           app-name: hello-circleci-connect-dev

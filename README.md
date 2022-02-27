@@ -262,6 +262,7 @@ deploy-to-heroku:
       - heroku/install
       - heroku/check-authentication
       - checkout
+      - setup_remote_docker
       - heroku/push-docker-image:
           app-name: hello-circleci-connect-dev
           process-types: web
