@@ -10,6 +10,10 @@ jobs:
   build-and-test:
     docker:
       - image: cimg/node:16.14.0
+    parameters:
+      node_version:
+        type: string
+        default: 16.14.0
     steps:
       - checkout
       - node/install-packages
@@ -67,7 +71,10 @@ jobs:
 workflows:
   run-tests:
     jobs:
-      - build-and-test
+      - build-and-test:
+          matrix:
+            parameters:
+              node_version: ["16.14.0", "14.19.0", "17.6.0" ]
       - dependency-vulnerability-scan
       - build-docker:
           requires:

@@ -287,14 +287,53 @@ workflows:
             - build-docker
 ```
 
+🎉 Contratulations, you have completed the second chapter, and created a full CI/CD pipeline that builds, verifies, and deploys your application!
 
-Implement security scan
-Use orb to install dependencies
-Set up environment variables
-Set up contexts & user groups
-Build image (docker)
-Deploy app (heroku prod)
+## Chapter 3 - Advanced CircleCI  
+
+In this section you will learn about advanced features of CircleCI for parallelism, access control, scheduling, dynamic configuration, and more!
+
+If you got lost in the previous chapter, the initial state of the configuration is in `.circleci/chapters/config_2.yml`. You can restore it by running `./scripts/chapter_2.sh`.
+
+### Employing parallelism - running tests in a matrix
+
+We often want to test the same code across different variants of the application. We can employ matrix with CircleCI for that.
+
+- Create a new job parameter for `build-and-test` job:
+
+```yaml
+jobs:
+  build-and-test:
+    docker:
+      - image: cimg/node:16.14.0
+    parameters:
+      node_version:
+        type: string
+        default: 16.14.0
+    steps:
+      - checkout
+      ...
+```
+
+- Pass matrix of versions as parameters for the job in the workflow definition:
+
+```yaml
 
 
+```
 
-## Chapter 3 - Advanced CircleCI
+Parallelism
+Matrix tests
+Split tests to run faster
+
+Filter branches
+Access control using groups
+Approval job to continue
+
+Deploy to multiple environments (multiple apps)
+Nightly build (deploy)
+
+Dynamic config - skip build on scripts
+
+
+Exercise - send message to Discord!
