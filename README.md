@@ -515,16 +515,40 @@ workflows:
           context: workshop_deployment-prod
 ```
 
-Parallelism
-Matrix tests
-Split tests to run faster
+Set up a nightly build to deploy dev version of the application
 
-Filter branches
-Access control using groups and contexts
-Approval job to continue
+- In `Project Settings` choose the `Triggers` tab and add a new trigger. Set it to run each day at 0:00 UTC, 1 per hour, off `main` branch. Add pipeline parameter `scheduled` set to `true`.
 
-Deploy to multiple environments (multiple apps)
-Nightly build (deploy)
+- Create a new workflow called `nightly_build` that only runs when `scheduled` is true:
+
+```yaml
+workflows:
+  ...
+  nightly-build:
+    when: << pipeline.parameters.scheduled >>
+    jobs:
+      - build-and-test:
+          matrix:
+            parameters:
+              node_version: ["16.14.0", "14.19.0", "17.6.0" ]
+      - dependency-vulnerability-scan
+      - deploy-to-heroku:
+          context: workshop_deployment-dev
+          environment: dev
+```
+
+- Add the `when/not` rule to the `run-tests` workflow:
+
+```yaml
+workflows:
+  run-tests:
+    when:
+      not: << pipeline.parameters.scheduled >>
+    jobs:
+      - build-and-test:
+      ...
+```
+
 
 Dynamic config - skip build on scripts
 

@@ -86,6 +86,8 @@ jobs:
       
 workflows:
   run-tests:
+    when:
+      not: << pipeline.parameters.scheduled >>
     jobs:
       - build-and-test:
           matrix:
@@ -111,3 +113,15 @@ workflows:
           requires:
             - hold-for-approval
           context: workshop_deployment-prod
+
+  nightly-build:
+    when: << pipeline.parameters.scheduled >>
+    jobs:
+      - build-and-test:
+          matrix:
+            parameters:
+              node_version: ["16.14.0", "14.19.0", "17.6.0" ]
+      - dependency-vulnerability-scan
+      - deploy-to-heroku:
+          context: workshop_deployment-dev
+          environment: dev
