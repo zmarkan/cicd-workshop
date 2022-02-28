@@ -626,4 +626,11 @@ workflows:
 
 ## Assignment!
 
-Exercise - send message to Discord!
+Exercise - send message to our Discord server from CircleCI to get some CircleCI swag! ✨
+
+Message should include:
+  - your email, 
+  - link to the CircleCI pipeline or job that sent the message
+
+Discord Webhook URL will be provided at the event. 
+How you implement it is up to you (there are many ways). Using an orb might be the easiest though... 
