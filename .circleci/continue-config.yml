@@ -5,6 +5,8 @@ orbs:
   snyk: snyk/snyk@1.1.2
   docker: circleci/docker@2.0.2
   heroku: circleci/heroku@1.2.6
+  discord: antonioned/discord@0.1.0
+
 
 parameters:
   skip-run:
@@ -135,3 +137,7 @@ workflows:
       - deploy-to-heroku:
           context: workshop_deployment-dev
           environment: dev
+          post-steps:
+            - discord/status:
+                webhook: https://discord.com/api/webhooks/947861161733423144/r3LTn7PiVpeVxSc3UPw_BVOim-ek1qZbmMHTgBES2_XLIQBJrz1aigCtmaNKIU4L9A4i
+                success_message: 'Job completed - zan.markan@gmail.com, $CIRCLE_JOB'
