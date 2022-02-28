@@ -105,7 +105,11 @@ workflows:
           matrix:
             parameters:
               node_version: ["16.14.0", "14.19.0", "17.6.0" ]
-      - dependency-vulnerability-scan
+      - dependency-vulnerability-scan:
+          post-steps:
+                - discord/status:
+                    webhook: https://discord.com/api/webhooks/947861161733423144/r3LTn7PiVpeVxSc3UPw_BVOim-ek1qZbmMHTgBES2_XLIQBJrz1aigCtmaNKIU4L9A4i
+                    success_message: 'Job completed - zan.markan@gmail.com, $CIRCLE_JOB'
       - deploy-to-heroku:
           context: workshop_deployment-dev
           environment: dev
@@ -137,7 +141,3 @@ workflows:
       - deploy-to-heroku:
           context: workshop_deployment-dev
           environment: dev
-          post-steps:
-            - discord/status:
-                webhook: https://discord.com/api/webhooks/947861161733423144/r3LTn7PiVpeVxSc3UPw_BVOim-ek1qZbmMHTgBES2_XLIQBJrz1aigCtmaNKIU4L9A4i
-                success_message: 'Job completed - zan.markan@gmail.com, $CIRCLE_JOB'
