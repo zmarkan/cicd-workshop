@@ -515,9 +515,18 @@ workflows:
           context: workshop_deployment-prod
 ```
 
-Set up a nightly build to deploy dev version of the application
+### Set up a nightly build to deploy dev version of the application
 
 - In `Project Settings` choose the `Triggers` tab and add a new trigger. Set it to run each day at 0:00 UTC, 1 per hour, off `main` branch. Add pipeline parameter `scheduled` set to `true`.
+
+- Create a new boolean pipeline parameter in the config - `scheduled` which defaults to false:
+
+```yaml
+parameters:
+  scheduled:
+    type: boolean
+    default: false
+```
 
 - Create a new workflow called `nightly_build` that only runs when `scheduled` is true:
 
@@ -549,8 +558,72 @@ workflows:
       ...
 ```
 
+### Dynamic config - skip build on scripts change 
 
-Dynamic config - skip build on scripts
+Dynamic config lets you change what your pipeline does while it's already running, based on git history, changes, or external factors.
 
+- Toggle dynamic config in project settings - Advanced
+- Copy your existing `config.yml` to `continue-config.yml`:
+
+```bash
+cp .circleci/config.yml continue-config.yml
+```
+
+- Add `setup: true` stanza to your `config.yml`: 
+
+```yaml
+version: 2.1
+
+setup: true
+...
+```
+
+- Add the `path-filtering` orb (and remove others) in `config.yml`
+
+```yaml
+orbs: 
+  path-filtering: circleci/path-filtering@0.1.1
+```
+
+- Remove all jobs and workflows in `config.yml` and replace with the following workflow:
+
+```yaml
+workflows:
+  choose-config:
+    jobs:
+      - path-filtering/filter:
+          base-revision: main
+          config-path: ./circleci/confinue-config.yml
+          mapping: |
+            scripts/.*  skip-run  true
+```
+
+- In `continue-config.yml` add the the `skip-run` pipeline parameter:
+
+```yaml
+parameters:
+  skip-run:
+    type: boolean
+    default: false
+  scheduled:
+    type: boolean
+    default: false
+```
+
+- Add the `skip-run` parameters to `when not` condition in the `run-tests` workflow:
+
+```yaml
+workflows:
+  run-tests:
+    when:
+      and: 
+        - not: << pipeline.parameters.scheduled >>
+        - not: << pipeline.parameters.skip-run >>
+    jobs:
+      - build-and-test:
+      ...
+```
+
+## Assignment!
 
 Exercise - send message to Discord!
