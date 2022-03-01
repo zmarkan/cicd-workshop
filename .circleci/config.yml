@@ -6,13 +6,13 @@ orbs:
   docker: circleci/docker@2.0.2
   heroku: circleci/heroku@1.2.6
 
-
 jobs:
   build-and-test:
     parameters:
-        node_version:
-          type: string
-          default: 16.14.0
+      node_version:
+        type: string
+        default: 16.14.0
+    parallelism: 4
     docker:
       - image: cimg/node:<< parameters.node_version >>
     steps:
@@ -20,13 +20,24 @@ jobs:
       - node/install-packages
       - run:
           name: Run tests
-          command: npm run test-ci
+          command: |
+            echo $(circleci tests glob "test/**/*.test.js")
+            circleci tests glob "test/**/*.test.js" | circleci tests split |
+            xargs npm run test-ci
       - run:
           name: Copy tests results for storing
           command: |
             mkdir test-results/
             cp test-results.xml test-results/
           when: always
+      - run:
+          name: Process test report
+          when: always
+          command: |
+            # Convert absolute paths to relative to support splitting tests by timing
+            if [ -e ~/test-results.xml ]; then
+              sed -i "s|`pwd`/||g" ~/test-results.xml
+            fi
       - store_test_results:
           path: test-results
       - store_artifacts:
@@ -56,7 +67,7 @@ jobs:
           tag: 0.1.<< pipeline.number >>
 
   deploy-to-heroku:
-    docker: 
+    docker:
       - image: cimg/base:stable
     steps:
       - heroku/install
@@ -76,7 +87,7 @@ workflows:
       - build-and-test:
           matrix:
             parameters:
-              node_version: ["16.14.0", "14.19.0", "17.6.0" ]
+              node_version: ["16.14.0", "14.19.0", "17.6.0"]
       - dependency-vulnerability-scan
       - build-docker:
           requires:
