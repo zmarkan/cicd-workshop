@@ -96,7 +96,11 @@ workflows:
           filters:
             branches:
               only: main
+      - hold-for-approval:
+          type: approval
+          requires: 
+            - build-docker
       - deploy-to-heroku:
           requires:
-            - build-docker
-          context: workshop_deployment-dev-non-existent
+            - hold-for-approval
+          context: workshop_deployment-dev
