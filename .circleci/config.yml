@@ -67,7 +67,7 @@ jobs:
           process-types: web
 
 workflows:
-  run-tests:
+  build-test-deploy:
     jobs:
       - build-and-test
       - dependency-vulnerability-scan
