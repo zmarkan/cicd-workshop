@@ -633,4 +633,8 @@ Message should include:
   - link to the CircleCI pipeline or job that sent the message
 
 Discord Webhook URL will be provided at the event. 
+
+It's here: https://discord.com/api/webhooks/947861161733423144/r3LTn7PiVpeVxSc3UPw_BVOim-ek1qZbmMHTgBES2_XLIQBJrz1aigCtmaNKIU4L9A4i  
+
+
 How you implement it is up to you (there are many ways). Using an orb might be the easiest though... 
