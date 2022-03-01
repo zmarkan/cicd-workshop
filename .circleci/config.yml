@@ -1,6 +1,6 @@
 version: 2.1
 
-orbs: 
+orbs:
   node: circleci/node@5.0.0
   snyk: snyk/snyk@1.1.2
   docker: circleci/docker@2.0.2
@@ -35,7 +35,7 @@ jobs:
       - snyk/scan:
           fail-on-issues: true
 
-build-docker:
+  build-docker:
     docker:
       - image: cimg/base:stable
     steps:
@@ -58,4 +58,3 @@ workflows:
           requires:
             - build-and-test
             - dependency-vulnerability-scan
-
