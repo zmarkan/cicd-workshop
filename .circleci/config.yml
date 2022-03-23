@@ -98,3 +98,12 @@ workflows:
       - deploy-to-heroku:
           context: workshop_deployment-dev
           environment: dev
+      - hold-for-approval:
+          type: approval
+          requires: 
+            - build-docker
+      - deploy-to-heroku:
+          environment: prod
+          requires:
+            - hold-for-approval
+          context: workshop_deployment-dev
