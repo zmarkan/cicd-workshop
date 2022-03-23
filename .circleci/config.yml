@@ -62,6 +62,10 @@ jobs:
           tag: 0.1.<< pipeline.number >>
   
   deploy-to-heroku:
+    parameters:
+      environment:
+        type: string
+        default: dev
     docker: 
       - image: cimg/base:stable
     steps:
@@ -70,10 +74,10 @@ jobs:
       - setup_remote_docker
       - checkout
       - heroku/push-docker-image:
-          app-name: hello-circleci-connect-dev
+          app-name: hello-circleci-connect-<< parameters.environment >>
           process-types: web
       - heroku/release-docker-image:
-          app-name: hello-circleci-connect-dev
+          app-name: hello-circleci-connect-<< parameters.environment >>
           process-types: web
       
 workflows:
@@ -92,6 +96,5 @@ workflows:
             branches:
               only: main
       - deploy-to-heroku:
-          requires:
-            - build-docker
           context: workshop_deployment-dev
+          environment: dev
