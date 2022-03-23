@@ -60,7 +60,7 @@ jobs:
       - snyk/scan:
           fail-on-issues: true
       - discord/status:
-          success_message: 	':tada: A $CIRCLE_JOB job has succeeded! - zan@circleci.com'
+          success_message: ':tada: A $CIRCLE_JOB job has succeeded! - zan@circleci.com'
 
   build-docker:
     docker:
