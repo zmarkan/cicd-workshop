@@ -634,7 +634,4 @@ Message should include:
 
 Discord Webhook URL will be provided at the event. 
 
-It's here: Webhook TBD!
-
-
 How you implement it is up to you (there are many ways). Using an orb might be the easiest though... 
