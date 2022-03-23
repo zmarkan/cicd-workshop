@@ -13,24 +13,31 @@ jobs:
         type: string
         default: 16.14.0
     docker:
-      - image: cimg/node:<< parameters.node_version >> 
+      - image: cimg/node:<< parameters.node_version >>
+    parallelism: 4
     steps:
       - checkout
       - node/install-packages
-      - run:
+      - run:          
           name: Run tests
-          command: npm run test-ci
+          command: |
+            echo $(circleci tests glob "test/**/*.test.js")
+            circleci tests glob "test/**/*.test.js" | circleci tests split |
+            xargs npm run test-ci
       - run:
           name: Copy tests results for storing
           command: |
-            mkdir test-results
-            cp test-results.xml test-results/
+            mkdir ~/test-results
+            cp test-results.xml ~/test-results/
           when: always
-      - store_test_results:
-          path: test-results
-      - store_artifacts:
-          path: test-results
-
+      - run:
+          name: Process test report
+          when: always
+          command: |
+              # Convert absolute paths to relative to support splitting tests by timing
+              if [ -e ~/test-results.xml ]; then
+                sed -i "s|`pwd`/||g" ~/test-results.xml
+              f
   dependency-vulnerability-scan:
     docker:
       - image: cimg/node:16.14.0
