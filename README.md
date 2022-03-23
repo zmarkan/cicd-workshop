@@ -1,5 +1,9 @@
 # CI/CD Workshop with CircleCI
 
+## Slides - CityJS 23 March 2022
+https://docs.google.com/presentation/d/1LNMUMD57H3NfrUDAOoZxmioUuOEedcDHj7oHq1_0zvY/edit?usp=sharing 
+
+
 ## Prerequisites
 
 Knowledge of Git version control system
