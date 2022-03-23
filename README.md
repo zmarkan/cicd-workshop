@@ -427,7 +427,7 @@ workflows:
       ...
 ```
 
-- You can now delete `HEROKU_API_KEY` in project settings!
+- You can now delete `HEROKU_API_KEY` in project settings environment variables!
 - Add approval job before deploying to Heroku:
 
 ```yaml
@@ -634,7 +634,7 @@ Message should include:
 
 Discord Webhook URL will be provided at the event. 
 
-It's here: https://discord.com/api/webhooks/947861161733423144/r3LTn7PiVpeVxSc3UPw_BVOim-ek1qZbmMHTgBES2_XLIQBJrz1aigCtmaNKIU4L9A4i  
+It's here: Webhook TBD!
 
 
 How you implement it is up to you (there are many ways). Using an orb might be the easiest though... 
