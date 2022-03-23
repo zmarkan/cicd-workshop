@@ -4,6 +4,7 @@ orbs:
   node: circleci/node@5.0.0
   snyk: snyk/snyk@1.1.2
   docker: circleci/docker@2.0.2
+  heroku: circleci/heroku@1.2.6
 
 jobs:
   build-and-test:
@@ -11,7 +12,7 @@ jobs:
       - image: cimg/node:16.14.0
     steps:
       - checkout
-      - node/install-packages 
+      - node/install-packages
       - run:
           name: Run tests
           command: npm run test-ci
@@ -25,7 +26,7 @@ jobs:
           path: test-results
       - store_artifacts:
           path: test-results
-      
+
   dependency-vulnerability-scan:
     docker:
       - image: cimg/node:16.14.0
@@ -35,20 +36,35 @@ jobs:
       - snyk/scan:
           fail-on-issues: true
 
-build-docker:
+  build-docker:
     docker:
-      - image: cimg/base:2022.03-20.04
+      - image: cimg/base:stable
     steps:
       - checkout
       - setup_remote_docker
       - docker/check
       - docker/build:
-          image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-cityjs-22
+          image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-1-march-22
           tag: 0.1.<< pipeline.number >>
       - docker/push:
-          image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-cityjs-22
+          image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-1-march-22
           tag: 0.1.<< pipeline.number >>
-
+  
+  deploy-to-heroku:
+    docker: 
+      - image: cimg/base:stable
+    steps:
+      - heroku/install
+      - heroku/check-authentication
+      - setup_remote_docker
+      - checkout
+      - heroku/push-docker-image:
+          app-name: hello-circleci-connect-dev
+          process-types: web
+      - heroku/release-docker-image:
+          app-name: hello-circleci-connect-dev
+          process-types: web
+      
 workflows:
   run-tests:
     jobs:
@@ -58,6 +74,6 @@ workflows:
           requires:
             - build-and-test
             - dependency-vulnerability-scan
-
-
-
+      - deploy-to-heroku:
+          requires:
+            - build-docker
