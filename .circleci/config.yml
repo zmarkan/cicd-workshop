@@ -37,7 +37,7 @@ jobs:
               # Convert absolute paths to relative to support splitting tests by timing
               if [ -e ~/test-results.xml ]; then
                 sed -i "s|`pwd`/||g" ~/test-results.xml
-              f
+              fi
   dependency-vulnerability-scan:
     docker:
       - image: cimg/node:16.14.0
