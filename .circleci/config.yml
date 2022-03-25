@@ -2,6 +2,11 @@ version: 2.1
 
 setup: true
 
+parameters:
+  scheduled:
+    type: boolean
+    default: false
+
 orbs: 
   path-filtering: circleci/path-filtering@0.1.1
 
@@ -13,3 +18,4 @@ workflows:
           config-path: .circleci/continue-config.yml
           mapping: |
             scripts/.*  skip-run  true
+            *           scheduled << pipeline.parameters.scheduled >>
