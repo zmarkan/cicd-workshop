@@ -1,8 +1,8 @@
 # CI/CD Workshop with CircleCI
 
-## Slides - CityJS 23 March 2022
-https://docs.google.com/presentation/d/1LNMUMD57H3NfrUDAOoZxmioUuOEedcDHj7oHq1_0zvY/edit?usp=sharing 
+## Slides - CircleCI(connect) Berlin - 31 March 2022
 
+https://docs.google.com/presentation/d/1vYt1CR5v3FYNj5xnqm58dhlIUwq1pB3DewBU1VC_oN0/edit?usp=sharing
 
 ## Prerequisites
 
@@ -111,7 +111,7 @@ jobs:
 
 ## Chapter 2 - Intermediate CI/CD
 
-In this section you will learn about the CircleCI orbs, and various other types of checks you can implement, as well as deploy your application!
+In this section you will learn about the CircleCI orbs, various other types of checks you can implement, test optimisations, as well as deploy your application!
 
 If you got lost in the previous chapter, the initial state of the configuration is in `.circleci/chapters/config_1.yml`. You can restore it by running `./scripts/chapter_1.sh`.
 
@@ -179,6 +179,102 @@ workflows:
       - dependency-vulnerability-scan
 
 ```
+### Employing parallelism - running tests in a matrix
+
+We often want to test the same code across different variants of the application. We can employ matrix with CircleCI for that.
+
+- Create a new job parameter for `build-and-test` job, and use its value in the selected image:
+
+```yaml
+jobs:
+  build-and-test:
+    parameters:
+      node_version:
+        type: string
+        default: 16.14.0
+    docker:
+      - image: cimg/node:<< parameters.node_version >>
+    steps:
+      - checkout
+```
+
+- Pass matrix of versions as parameters for the job in the workflow definition:
+
+```yaml
+workflows:
+  run-tests:
+    jobs:
+      - build-and-test:
+          matrix:
+            parameters:
+              node_version: ["16.14.0", "14.19.0", "17.6.0" ]
+      - dependency-vulnerability-scan
+      ...
+```
+
+This sets up the tests to run in a matrix, in parallel. But we must go further. Our tests still run for too long, so we can split them across multiple jobs.
+
+### Split tests
+
+- Change run test command to use CircleCI's test splitting feature:
+
+```yaml
+...
+jobs:
+  build-and-test:
+    ...
+    steps:
+          - checkout
+          - node/install-packages
+          - run:          
+              name: Run tests
+              command: |
+                echo $(circleci tests glob "test/**/*.test.js")
+                circleci tests glob "test/**/*.test.js" | circleci tests split |
+                xargs npm run test-ci
+          ...
+```
+
+- Set job `parallelism` parameter:
+
+```yaml
+jobs:
+  build-and-test:
+    ...
+    docker:
+      - image: cimg/node:<< parameters.node-version >>
+    parallelism: 4
+    ...
+```
+
+- Make sure test results are merged correctly:
+
+```yaml
+jobs:
+  build-and-test:
+    ...
+    steps:
+          - checkout
+          ...
+          - run:
+            name: Copy tests results for storing
+            command: |
+              mkdir test-results
+              cp test-results.xml test-results/
+            when: always
+          - run:
+              name: Process test report
+              command: |
+                  # Convert absolute paths to relative to support splitting tests by timing
+                  if [ -e test-results.xml ]; then
+                    sed -i "s|`pwd`/||g" test-results.xml
+                  fi
+          - store_test_results:
+              path: test-results
+          - store_artifacts:
+              path: test-results
+          ...
+```
 
 ### Build a Docker image & Deploy it to the registry
 
@@ -208,10 +304,10 @@ orbs:
       - setup_remote_docker
       - docker/check
       - docker/build:
-          image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-1-March-22
+          image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-31-March-22
           tag: 0.1.<< pipeline.number >>
       - docker/push:
-          image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-1-March-22
+          image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-31-March-22
           tag: 0.1.<< pipeline.number >>
 ```
 
@@ -296,103 +392,9 @@ workflows:
 
 ## Chapter 3 - Advanced CircleCI  
 
-In this section you will learn about advanced features of CircleCI for parallelism, access control, scheduling, dynamic configuration, and more!
+In this section you will learn about advanced features of CircleCI for access control, scheduling, and more!
 
 If you got lost in the previous chapter, the initial state of the configuration is in `.circleci/chapters/config_2.yml`. You can restore it by running `./scripts/chapter_2.sh`.
-
-### Employing parallelism - running tests in a matrix
-
-We often want to test the same code across different variants of the application. We can employ matrix with CircleCI for that.
-
-- Create a new job parameter for `build-and-test` job, and use its value in the selected image:
-
-```yaml
-jobs:
-  build-and-test:
-    parameters:
-      node_version:
-        type: string
-        default: 16.14.0
-    docker:
-      - image: cimg/node:<< parameters.node_version >>
-    steps:
-      - checkout
-```
-
-- Pass matrix of versions as parameters for the job in the workflow definition:
-
-```yaml
-workflows:
-  run-tests:
-    jobs:
-      - build-and-test:
-          matrix:
-            parameters:
-              node_version: ["16.14.0", "14.19.0", "17.6.0" ]
-      - dependency-vulnerability-scan
-      ...
-```
-
-This sets up the tests to run in a matrix, in parallel. But we must go further. Our tests still run for too long, so we can split them across multiple jobs.
-
-- Change run test command to use CircleCI's test splitting feature:
-
-```yaml
-...
-jobs:
-  build-and-test:
-    ...
-    steps:
-          - checkout
-          - node/install-packages
-          - run:          
-              name: Run tests
-              command: |
-                echo $(circleci tests glob "test/**/*.test.js")
-                circleci tests glob "test/**/*.test.js" | circleci tests split |
-                xargs npm run test-ci
-          ...
-```
-
-- Set job `parallelism` parameter:
-
-```yaml
-jobs:
-  build-and-test:
-    ...
-    docker:
-      - image: cimg/node:<< parameters.node-version >>
-    parallelism: 4
-    ...
-```
-
-- Make sure test results are merged correctly:
-
-```yaml
-jobs:
-  build-and-test:
-    ...
-    steps:
-          - checkout
-          ...
-          - run:
-              name: Copy tests results for storing
-              command: |
-                mkdir ~/test-results
-                cp test-results.xml ~/test-results/
-              when: always
-          - run:
-              name: Process test report
-              when: always
-              command: |
-                  # Convert absolute paths to relative to support splitting tests by timing
-                  if [ -e ~/test-results.xml ]; then
-                    sed -i "s|`pwd`/||g" ~/test-results.xml
-                  fi
-          - store_test_results:
-              path: test-results
-          ...
-```
 
 ### Access and flow control
 
@@ -562,7 +564,14 @@ workflows:
       ...
 ```
 
-### Dynamic config - skip build on scripts change 
+
+🎉 Contratulations, you have completed the chapter, and created a complex CI/CD pipeline with access control.
+
+## Chapter 4 - Dynamic Config
+
+You can reset the state for this by running `.scripts/chapter_3.sh`
+
+So far our config has been pretty straightforward. Trigger on commit or schedule would run our pipeline. But sometimes we want more flexibility, based on some external factors.
 
 Dynamic config lets you change what your pipeline does while it's already running, based on git history, changes, or external factors.
 
@@ -587,19 +596,39 @@ setup: true
 ```yaml
 orbs: 
   path-filtering: circleci/path-filtering@0.1.1
+  continuation: circleci/continuation@0.2.0
 ```
 
-- Remove all jobs and workflows in `config.yml` and replace with the following workflow:
+- Remove all jobs and workflows in `config.yml` and replace with the following:
 
 ```yaml
+jobs:
+  filter-paths:
+    docker:
+      - image: cimg/base:stable
+    steps:   
+      - checkout
+      - path-filtering/set-parameters:
+          base-revision: main
+          mapping: |
+            scripts/.*     skip-run  true
+          output-path: /tmp/pipeline-parameters.json
+      - continuation/continue:
+          configuration_path: .circleci/continue-config.yml
+          parameters: /tmp/pipeline-parameters.json 
 workflows:
   choose-config:
     jobs:
-      - path-filtering/filter:
-          base-revision: main
-          config-path: ./circleci/confinue-config.yml
-          mapping: |
-            scripts/.*  skip-run  true
+      - filter-paths
+```
+
+Add the pipeline parameter for our scheduled pipeline
+
+```yaml
+parameters:
+  scheduled:
+    type: boolean
+    default: false
 ```
 
 - In `continue-config.yml` add the the `skip-run` pipeline parameter:

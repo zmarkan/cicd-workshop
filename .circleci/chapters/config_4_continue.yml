@@ -105,7 +105,7 @@ workflows:
               node_version: ["16.14.0", "14.19.0", "17.6.0" ]
       - dependency-vulnerability-scan
       - deploy-to-heroku:
-          name: deploy-dev
+          name: Deploy - Dev
           context: workshop_deployment-dev
           environment: dev
       - build-docker:
@@ -121,8 +121,6 @@ workflows:
             - build-docker
       - deploy-to-heroku:
           environment: prod
-          name:
-            deploy-prod
           requires:
             - hold-for-approval
           context: workshop_deployment-prod
@@ -136,5 +134,6 @@ workflows:
               node_version: ["16.14.0", "14.19.0", "17.6.0" ]
       - dependency-vulnerability-scan
       - deploy-to-heroku:
+          name: Deploy - Prod
           context: workshop_deployment-dev
           environment: dev
