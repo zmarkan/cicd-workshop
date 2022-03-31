@@ -92,6 +92,9 @@ workflows:
           requires:
             - build-and-test
             - dependency-vulnerability-scan
+          filters:
+            branches:
+              only: main
       - deploy-to-heroku:
           requires:
             - build-docker
