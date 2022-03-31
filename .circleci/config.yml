@@ -50,19 +50,19 @@ jobs:
       - snyk/scan:
           fail-on-issues: true  
     
-build-docker:
-  docker:
-    - image: cimg/base:stable
-  steps:
-    - checkout
-    - setup_remote_docker
-    - docker/check
-    - docker/build:
-        image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-31-March-22
-        tag: 0.1.<< pipeline.number >>
-    - docker/push:
-        image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-31-March-22
-        tag: 0.1.<< pipeline.number >>
+  build-docker:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - setup_remote_docker
+      - docker/check
+      - docker/build:
+          image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-31-March-22
+          tag: 0.1.<< pipeline.number >>
+      - docker/push:
+          image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-31-March-22
+          tag: 0.1.<< pipeline.number >>
 
 workflows:
   run-tests:
