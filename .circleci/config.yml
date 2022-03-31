@@ -32,10 +32,4 @@ jobs:
 workflows:
   choose-config:
     jobs:
-
-      - path-filtering/filter:
-          base-revision: main
-          config-path: .circleci/continue-config.yml
-          mapping: |
-            scripts/.*  skip-run  true
-            *           scheduled << pipeline.parameters.scheduled >>
+      - filter-paths
