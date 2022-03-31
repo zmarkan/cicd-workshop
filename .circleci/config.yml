@@ -21,14 +21,14 @@ jobs:
           base-revision: main
           mapping: |
             scripts/.*  skip-run  true
-          output-path: pipeline-parameters.json
+          output-path: /tmp/pipeline-parameters.json
       - run:
           name: Set up scheduled parameter
           command: |
-            cat pipeline-parameters.json | jq '. + {scheduled: << pipeline.parameters.scheduled >>}'
+            cat /tmp/pipeline-parameters.json | jq '. + {scheduled: << pipeline.parameters.scheduled >>}'
       - continuation/continue:
           configuration_path: .circleci/continue-config.yml
-          parameters: pipeline-parameters.json            
+          parameters: /tmp/pipeline-parameters.json            
 
 workflows:
   choose-config:
