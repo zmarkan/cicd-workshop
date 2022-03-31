@@ -103,9 +103,13 @@ workflows:
           filters:
             branches:
               only: main
+      - hold-for-approval:
+          type: approval
+          requires: 
+            - build-docker
       - deploy-to-heroku:
           requires:
-            - build-docker
+            - hold-for-approval
           environment: prod
           name: deploy-prod
           context: workshop_deployment-dev
