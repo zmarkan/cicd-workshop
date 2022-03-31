@@ -1,5 +1,10 @@
 version: 2.1
 
+parameters:
+  scheduled:
+    type: boolean
+    default: false
+
 orbs:
   node: circleci/node@5.0.2
   snyk: snyk/snyk@1.1.2
@@ -86,6 +91,8 @@ jobs:
 
 workflows:
   run-tests:
+    when:
+      not: << pipeline.parameters.scheduled >>
     jobs:
       - build-and-test:
           matrix:
@@ -113,3 +120,15 @@ workflows:
           environment: prod
           name: deploy-prod
           context: workshop_deployment-dev
+
+  nightly-build:
+    when: << pipeline.parameters.scheduled >>
+    jobs:
+      - build-and-test:
+          matrix:
+            parameters:
+              node_version: ["16.14.0", "14.19.0", "17.6.0" ]
+      - dependency-vulnerability-scan
+      - deploy-to-heroku:
+          context: workshop_deployment-dev
+          environment: dev
