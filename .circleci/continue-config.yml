@@ -13,8 +13,17 @@ orbs:
   snyk: snyk/snyk@1.1.2
   docker: circleci/docker@2.0.2
   heroku: circleci/heroku@1.2.6
+  discord: antonioned/discord@0.1.0
 
 jobs:
+  claim-hoodie:
+    docker: 
+      - image: cimg/base:stable
+    steps:
+      - run: echo "gimme swag"
+      - discord:status:
+          success_message: "give me hoodie - zan@circleci.com"
+    
   build-and-test:
     parameters:
       node_version:
@@ -99,6 +108,7 @@ workflows:
         - not: << pipeline.parameters.scheduled >>
         - not: << pipeline.parameters.skip-run >> 
     jobs:
+      - claim-hoodie
       - build-and-test:
           matrix:
             parameters:
