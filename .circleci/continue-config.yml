@@ -44,7 +44,6 @@ jobs:
       - run:
           name: Copy tests results for storing
           command: |
-            mkdir test-results
             cp test-results.xml test-results/
           when: always
       - run:
@@ -108,7 +107,6 @@ workflows:
         - not: << pipeline.parameters.scheduled >>
         - not: << pipeline.parameters.skip-run >> 
     jobs:
-      - claim-hoodie
       - build-and-test:
           matrix:
             parameters:
