@@ -65,20 +65,20 @@ jobs:
           image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-31-march-22
           tag: 0.1.<< pipeline.number >>
 
-deploy-to-heroku:
-  docker:
-    - image: cimg/base:stable
-  steps:
-    - heroku/install
-    - heroku/check-authentication
-    - checkout
-    - setup_remote_docker
-    - heroku/push-docker-image:
-        app-name: hello-circleci-connect-dev
-        process-types: web
-    - heroku/release-docker-image:
-        app-name: hello-circleci-connect-dev
-        process-types: web
+  deploy-to-heroku:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - heroku/install
+      - heroku/check-authentication
+      - checkout
+      - setup_remote_docker
+      - heroku/push-docker-image:
+          app-name: hello-circleci-connect-dev
+          process-types: web
+      - heroku/release-docker-image:
+          app-name: hello-circleci-connect-dev
+          process-types: web
 
 workflows:
   run-tests:
