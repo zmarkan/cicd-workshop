@@ -6,6 +6,11 @@ orbs:
   docker: circleci/docker@2.0.2
   heroku: circleci/heroku@1.2.6
 
+parameters:
+  scheduled:
+    type: boolean
+    default: false
+
 jobs:
   build-and-test:
     parameters:
@@ -14,6 +19,7 @@ jobs:
         default: 16.14.0
     docker:
       - image: cimg/node:<< parameters.node_version >>
+    parallelism: 4
     steps:
       - checkout
       - node/install-packages
@@ -65,33 +71,62 @@ jobs:
           tag: 0.1.<< pipeline.number >>
   
   deploy-to-heroku:
+    parameters:
+      environment:
+        type: string
+        default: dev
     docker: 
       - image: cimg/base:stable
     steps:
       - heroku/install
       - heroku/check-authentication
-      - setup_remote_docker
       - checkout
+      - setup_remote_docker
       - heroku/push-docker-image:
-          app-name: hello-circleci-connect-dev
+          app-name: hello-circleci-connect-<< parameters.environment >>
           process-types: web
       - heroku/release-docker-image:
-          app-name: hello-circleci-connect-dev
+          app-name: hello-circleci-connect-<< parameters.environment >>
           process-types: web
       
 workflows:
   run-tests:
+    when:
+      not: << pipeline.parameters.scheduled >>
     jobs:
       - build-and-test:
           matrix:
-                parameters:
-                  node_version: ["16.14.0", "14.19.0", "17.6.0" ]
+            parameters:
+              node_version: ["16.14.0", "14.19.0", "17.6.0" ]
       - dependency-vulnerability-scan
+      - deploy-to-heroku:
+          context: workshop_deployment-dev
+          environment: dev
       - build-docker:
           requires:
             - build-and-test
             - dependency-vulnerability-scan
-      - deploy-to-heroku:
-          requires:
+          filters:
+            branches:
+              only: main 
+      - hold-for-approval:
+          type: approval
+          requires: 
             - build-docker
-            
+      - deploy-to-heroku:
+          environment: prod
+          requires:
+            - hold-for-approval
+          context: workshop_deployment-prod
+
+  nightly-build:
+    when: << pipeline.parameters.scheduled >>
+    jobs:
+      - build-and-test:
+          matrix:
+            parameters:
+              node_version: ["16.14.0", "14.19.0", "17.6.0" ]
+      - dependency-vulnerability-scan
+      - deploy-to-heroku:
+          context: workshop_deployment-dev
+          environment: dev
