@@ -68,16 +68,20 @@ jobs:
   deploy-to-heroku:
     docker:
       - image: cimg/base:stable
+    parameters:
+      environment:
+        type: string
+        default: dev
     steps:
       - heroku/install
       - heroku/check-authentication
       - checkout
       - setup_remote_docker
       - heroku/push-docker-image:
-          app-name: hello-circleci-connect-dev
+          app-name: hello-circleci-connect-<< parameters.environment >>
           process-types: web
       - heroku/release-docker-image:
-          app-name: hello-circleci-connect-dev
+          app-name: hello-circleci-connect-<< parameters.environment >>
           process-types: web
 
 workflows:
@@ -88,6 +92,10 @@ workflows:
             parameters:
               node_version: ["16.14.0", "14.19.0", "17.6.0"]
       - dependency-vulnerability-scan
+      - deploy-to-heroku:
+          name: deploy-dev
+          context: workshop_deployment-dev
+          environment: dev
       - build-docker:
           requires:
             - build-and-test
@@ -98,4 +106,6 @@ workflows:
       - deploy-to-heroku:
           requires:
             - build-docker
+          environment: prod
+          name: deploy-prod
           context: workshop_deployment-dev
