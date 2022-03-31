@@ -576,7 +576,7 @@ So far our config has been pretty straightforward. Trigger on commit or schedule
 Dynamic config lets you change what your pipeline does while it's already running, based on git history, changes, or external factors.
 
 - Toggle dynamic config in project settings - Advanced
-- Copy your existing `config.yml` to `continue-config.yml`:
+- Copy your existing `config.yml` to `.circleci/continue-config.yml`:
 
 ```bash
 cp .circleci/config.yml continue-config.yml
