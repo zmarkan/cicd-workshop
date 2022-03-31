@@ -25,7 +25,7 @@ jobs:
       - run:
           name: Set up scheduled parameter
           command: |
-            cat /tmp/pipeline-parameters.json | jq '. + {scheduledaaa: << pipeline.parameters.scheduled >>}' > tmp.json && mv tmp.json /tmp/pipeline-parameters.json
+            cat /tmp/pipeline-parameters.json | jq '. + {scheduled: << pipeline.parameters.scheduled >>}' > tmp.json && mv tmp.json /tmp/pipeline-parameters.json
             cat /tmp/pipeline-parameters.json
       - continuation/continue:
           configuration_path: .circleci/continue-config.yml
