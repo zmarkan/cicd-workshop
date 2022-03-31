@@ -95,10 +95,9 @@ jobs:
 workflows:
   run-tests:
     when:
-      not: 
-        and: 
-          - << pipeline.parameters.scheduled >>
-          - << pipeline.parameters.skip-run >> 
+      and: 
+        - not: << pipeline.parameters.scheduled >>
+        - not: << pipeline.parameters.skip-run >> 
     jobs:
       - build-and-test:
           matrix:
