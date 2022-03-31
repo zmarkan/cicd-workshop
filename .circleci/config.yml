@@ -20,8 +20,8 @@ jobs:
       - path-filtering/set-parameters:
           base-revision: main
           mapping: |
-            scripts/.*  skip-run  true
-            .circleci/*           message "foo bar baz"
+            scripts/.*     skip-run  true
+            .circleci/.*   message   "foo bar baz"
           output-path: /tmp/pipeline-parameters.json
       - run:
           name: Set up scheduled parameter
