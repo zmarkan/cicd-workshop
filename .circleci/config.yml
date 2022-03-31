@@ -21,7 +21,6 @@ jobs:
           base-revision: main
           mapping: |
             scripts/.*     skip-run  true
-            .circleci/.*   message   "config_changed"
           output-path: /tmp/pipeline-parameters.json
       - continuation/continue:
           configuration_path: .circleci/continue-config.yml
