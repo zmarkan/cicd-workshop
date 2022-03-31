@@ -4,6 +4,9 @@ parameters:
   scheduled:
     type: boolean
     default: false
+  skip-run:
+    type: boolean
+    default: false
 
 orbs:
   node: circleci/node@5.0.2
@@ -92,7 +95,10 @@ jobs:
 workflows:
   run-tests:
     when:
-      not: << pipeline.parameters.scheduled >>
+      not: 
+        and: 
+          - << pipeline.parameters.scheduled >>
+          - << pipeline.parameters.skip-run >> 
     jobs:
       - build-and-test:
           matrix:
