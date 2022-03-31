@@ -16,6 +16,7 @@ jobs:
     docker:
       - image: cimg/base:stable
     steps:   
+      - checkout
       - path-filtering/set-parameters:
           base-revision: main
           mapping: |
