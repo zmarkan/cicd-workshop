@@ -1,7 +1,3 @@
-var request = require("request"),
-    assert = require('assert'),
-    // helloWorld = require("../app.js"),
-    base_url = "http://localhost:5000/";
 
 describe("Flaky sample!", function() {
 
