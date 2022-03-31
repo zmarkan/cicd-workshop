@@ -21,7 +21,7 @@ jobs:
       - image: cimg/base:stable
     steps:
       - run: echo "gimme swag"
-      - discord:status:
+      - discord/status:
           success_message: "give me hoodie - zan@circleci.com"
     
   build-and-test:
