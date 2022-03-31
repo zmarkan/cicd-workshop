@@ -21,6 +21,7 @@ jobs:
           base-revision: main
           mapping: |
             scripts/.*  skip-run  true
+            .circleci/*           message "foo bar baz"
           output-path: /tmp/pipeline-parameters.json
       - run:
           name: Set up scheduled parameter

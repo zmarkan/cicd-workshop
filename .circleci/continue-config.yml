@@ -13,6 +13,9 @@ parameters:
   scheduled:
     type: boolean
     default: false
+  message:
+    type: string
+    default: default message
 
 jobs:
   build-and-test:
