@@ -304,10 +304,10 @@ orbs:
       - setup_remote_docker
       - docker/check
       - docker/build:
-          image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-31-March-22
+          image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-31-march-22
           tag: 0.1.<< pipeline.number >>
       - docker/push:
-          image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-31-March-22
+          image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-31-march-22
           tag: 0.1.<< pipeline.number >>
 ```
 
