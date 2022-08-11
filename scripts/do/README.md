@@ -10,42 +10,9 @@ Knowledge of Git version control system
 
 GitHub account - where the code is hosted
 
-A code editor - you can use 
+DigitalOcean account - use the code ABCDEFG_HIJKL
 
-## Chapter 0 - The Prologue and Prep
-
-Fork this project! You will need a GitHub account.
-
-This project can run on your machine if you have the correct dependencies installed (Git, Terraform, DigitalOcean CLI, and a few others) - or it can also run in a cloud based environment using GitPod!
-
-This lets you spin up an environment with all the dependencies preinstalled, remotely connect to it, and work as it was on your machine. We suggest doing that route, as it will be much faster.
-
-
-### Sign up for the required services that we'll use.
-
-Create an account with DigitalOcean.com - https://cloud.digitalocean.com/ We will use DigitalOcean to deploy our application to.
-
-Create an account with Hashicorp Terraform - https://app.terraform.io/ We will use Terraform to provision our infrastructure on Digital Ocean.
-
-Create an account with Docker Hub - https://hub.docker.com/ We will use Docker Hub as a repository for our app images.
-
-Create an account with Snyk - https://app.snyk.io/ - We will use Snyk to run an automated security scan of our application an its dependencies. 
-
-### How this workshop works
-
-We will go from a chapter to chapter - depending on people's background we might skip a chapter (Chapter 1 is for complete beginners to CI/CD and subsequent chapters build on top of that, for example).
-
-To jump between chapters we have prepared a set of handy scripts you can run in your terminal, which will set up your environment so you can follow along.
-
-The scripts to run are:
-
-`./scripts/do_0_start.sh` - Beginning of first chapter
-`./scripts/do_1.sh` - End of first chapter/Start of second chapter
-`./scripts/do_2.sh` -
-`./scripts/do_3.sh` - 
-`./scripts/do_4.sh` - 
-
-The chapters will copy and overwrite certain files in your workspace, so after running each script, commit the changes and push it, which will run it on CircleCI.
+A code editor - GitPod
 
 ## Chapter 1 - Basics of CircleCI
 
@@ -107,6 +74,18 @@ jobs:
           path: test-results
 ```
 
+- 🚨 Error! Fix error by SSHing into the failed job 👩‍💻
+- Discover that we missed a `mkdir test-results`:
+
+```yaml
+ - run:
+          name: Copy tests results for storing
+          command: |
+            mkdir test-results
+            cp test-results.xml test-results/
+          when: always
+
+```
 - Utilise cache for dependencies to avoid installing each time:
 
 ```yaml
