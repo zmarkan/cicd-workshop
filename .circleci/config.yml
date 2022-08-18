@@ -1,32 +1,283 @@
 version: 2.1
 
-setup: true
-
 parameters:
   scheduled:
     type: boolean
     default: false
 
 orbs:
-  path-filtering: circleci/path-filtering@0.1.1
-  continuation: circleci/continuation@0.2.0
+  node: circleci/node@5.0.2
+  snyk: snyk/snyk@1.2.3
+  docker: circleci/docker@2.1.2
+
+commands:
+  install_doctl:
+    parameters:
+      version:
+        default: "1.79.0"
+        type: string
+    steps:
+      - run:
+          name: Install doctl client
+          command: |
+            cd ~
+            wget https://github.com/digitalocean/doctl/releases/download/v<<parameters.version>>/doctl-<<parameters.version>>-linux-amd64.tar.gz
+            tar xf ~/doctl-<<parameters.version>>-linux-amd64.tar.gz
+            sudo mv ~/doctl /usr/local/bin
 
 jobs:
-  filter-paths:
+  build-and-test:
+    parameters:
+      node_version:
+        type: string
+        default: 16.17.0
+    docker:
+      - image: cimg/node:<< parameters.node_version >>
+    parallelism: 4
+    steps:
+      - checkout
+      - node/install-packages
+      - run:
+          name: Run tests
+          command: |
+            echo $(circleci tests glob "test/**/*.test.js")
+            circleci tests glob "test/**/*.test.js" | circleci tests split |
+            xargs npm run test-ci
+      - run:
+          name: Copy tests results for storing
+          command: |
+            mkdir test-results
+            cp test-results.xml test-results/
+          when: always
+      - run:
+          name: Process test report
+          command: |
+            # Convert absolute paths to relative to support splitting tests by timing
+            if [ -e test-results.xml ]; then
+              sed -i "s|`pwd`/||g" test-results.xml
+            fi
+      - store_test_results:
+          path: test-results
+      - store_artifacts:
+          path: test-results
+
+  dependency-vulnerability-scan:
+    docker:
+      - image: cimg/node:16.17.0
+    steps:
+      - checkout
+      - node/install-packages
+      - snyk/scan:
+          fail-on-issues: true
+          monitor-on-build: false
+
+  build_scan_docker_image:
     docker:
       - image: cimg/base:stable
-    steps:   
+    steps:
       - checkout
-      - path-filtering/set-parameters:
-          base-revision: main
-          mapping: |
-            scripts/.*     skip-run  true
-          output-path: /tmp/pipeline-parameters.json
-      - continuation/continue:
-          configuration_path: .circleci/continue-config.yml
-          parameters: /tmp/pipeline-parameters.json 
-          
+      - setup_remote_docker:
+          docker_layer_caching: false
+      - docker/check
+      - docker/build:
+          image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-31-march-22
+          tag: 0.1.<< pipeline.number >>
+      - snyk/scan:
+          fail-on-issues: false
+          monitor-on-build: false
+          target-file: "Dockerfile"
+          docker-image-name: $DOCKER_LOGIN/$IMAGE_NAME:$TAG
+          project: ${CIRCLE_PROJECT_REPONAME}/${CIRCLE_BRANCH}-app
+      - docker/push:
+          image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-31-march-22
+          tag: 0.1.<< pipeline.number >>
+
+  create_do_k8s_cluster:
+    docker:
+      - image: cimg/node:16.17.0
+    steps:
+      - checkout
+      - install_doctl:
+          version: "1.78.0"
+      - run:
+          name: Create .terraformrc file locally
+          command: echo "credentials \"app.terraform.io\" {token = \"$TERRAFORM_TOKEN\"}" > $HOME/.terraformrc
+      - terraform/install:
+          terraform_version: "1.0.6"
+          arch: "amd64"
+          os: "linux"
+      - terraform/init:
+          path: ./terraform/do_create_k8s
+      - run:
+          name: Create K8s Cluster on DigitalOcean
+          command: |
+            export CLUSTER_NAME=${CIRCLE_PROJECT_REPONAME}
+            export TAG=0.0.<< pipeline.number >>
+            export DO_K8S_SLUG_VER="$(doctl kubernetes options versions \
+              -o json -t $DIGITAL_OCEAN_TOKEN | jq -r '.[0] | .slug')"
+
+            terraform -chdir=./terraform/do_create_k8s apply \
+              -var do_token=$DIGITAL_OCEAN_TOKEN \
+              -var cluster_name=$CLUSTER_NAME \
+              -var do_k8s_slug_ver=$DO_K8S_SLUG_VER \
+              -auto-approve
+
+deploy_to_k8s:
+  docker:
+    - image: cimg/node:14.16.0
+  steps:
+    - checkout
+    - install_doctl:
+        version: "1.78.0"
+    - run:
+        name: Create .terraformrc file locally
+        command: echo "credentials \"app.terraform.io\" {token = \"$TERRAFORM_TOKEN\"}" > $HOME/.terraformrc
+    - terraform/install:
+        terraform_version: "1.0.6"
+        arch: "amd64"
+        os: "linux"
+    - terraform/init:
+        path: ./terraform/do_k8s_deploy_app
+    - run:
+        name: Deploy Application to K8s on DigitalOcean
+        command: |
+          export CLUSTER_NAME=${CIRCLE_PROJECT_REPONAME}
+          export TAG=0.0.<< pipeline.number >>
+          export DOCKER_IMAGE="${DOCKER_LOGIN}/${CIRCLE_PROJECT_REPONAME}:$TAG"
+          doctl auth init -t $DIGITAL_OCEAN_TOKEN
+          doctl kubernetes cluster kubeconfig save $CLUSTER_NAME
+
+          terraform -chdir=./terraform/do_k8s_deploy_app apply \
+            -var do_token=$DIGITAL_OCEAN_TOKEN \
+            -var cluster_name=$CLUSTER_NAME \
+            -var docker_image=$DOCKER_IMAGE \
+            -auto-approve
+
+          # Save the Load Balancer Public IP Address
+          export ENDPOINT="$(terraform -chdir=./terraform/do_k8s_deploy_app output lb_public_ip)"
+          mkdir -p /tmp/do_k8s/
+          echo 'export ENDPOINT='${ENDPOINT} > /tmp/do_k8s/dok8s-endpoint
+    - persist_to_workspace:
+        root: /tmp/do_k8s/
+        paths:
+          - "*"
+
+  smoketest_k8s_deployment:
+    docker:
+      - image: cimg/node:14.16.0
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /tmp/do_k8s/
+      - run:
+          name: Smoke Test K8s App Deployment
+          command: |
+            source /tmp/do_k8s/dok8s-endpoint
+            ./test/smoke_test $ENDPOINT
+  destroy_k8s_cluster:
+    docker:
+      - image: cimg/node:14.16.0
+    steps:
+      - checkout
+      - install_doctl:
+          version: "1.78.0"
+      - run:
+          name: Create .terraformrc file locally
+          command: echo "credentials \"app.terraform.io\" {token = \"$TERRAFORM_TOKEN\"}" > $HOME/.terraformrc && cat $HOME/.terraformrc
+      - terraform/install:
+          terraform_version: "1.0.6"
+          arch: "amd64"
+          os: "linux"
+      - terraform/init:
+          path: ./terraform/do_k8s_deploy_app/
+      - run:
+          name: Destroy App Deployment
+          command: |
+            export CLUSTER_NAME=${CIRCLE_PROJECT_REPONAME}
+            export TAG=0.0.<< pipeline.number >>
+            export DOCKER_IMAGE="${DOCKER_LOGIN}/${CIRCLE_PROJECT_REPONAME}:$TAG"          
+            doctl auth init -t $DIGITAL_OCEAN_TOKEN
+            doctl kubernetes cluster kubeconfig save $CLUSTER_NAME
+
+            terraform -chdir=./terraform/do_k8s_deploy_app/ apply -destroy \
+              -var do_token=$DIGITAL_OCEAN_TOKEN \
+              -var cluster_name=$CLUSTER_NAME \
+              -var docker_image=$DOCKER_IMAGE \
+              -auto-approve
+
+      - terraform/init:
+          path: ./terraform/do_create_k8s
+      - run:
+          name: Destroy K8s Cluster
+          command: |
+            export CLUSTER_NAME=${CIRCLE_PROJECT_REPONAME}
+            export TAG=0.0.<< pipeline.number >>
+            export DO_K8S_SLUG_VER="$(doctl kubernetes options versions \
+              -o json -t $DIGITAL_OCEAN_TOKEN | jq -r '.[0] | .slug')"
+
+            terraform -chdir=./terraform/do_create_k8s apply -destroy \
+              -var do_token=$DIGITAL_OCEAN_TOKEN \
+              -var cluster_name=$CLUSTER_NAME \
+              -var do_k8s_slug_ver=$DO_K8S_SLUG_VER \
+              -auto-approve
+
 workflows:
-  choose-config:
+  test_scan_deploy:
+    when:
+      and:
+        - not: << pipeline.parameters.scheduled >>
     jobs:
-      - filter-paths
+      - build-and-test:
+          matrix:
+            parameters:
+              node_version: ["16.14.0", "14.19.0", "17.6.0"]
+      - dependency-vulnerability-scan
+      - build_scan_docker_image:
+          requires:
+            - build-and-test
+            - dependency-vulnerability-scan
+          context: do-workshop
+          filters:
+            branches:
+              only: main
+      - create_do_k8s_cluster:
+          context:
+            - do-workshop
+      - deploy_to_k8s:
+          requires:
+            - create_do_k8s_cluster
+            - build_scan_docker_image
+          context:
+            - do-workshop
+      - smoketest_k8s_deployment:
+          requires:
+            - deploy_to_k8s
+      - approve_destroy:
+          type: approval
+          requires:
+            - smoketest_k8s_deployment
+      - destroy_k8s_cluster:
+          requires:
+            - approve_destroy
+          context:
+            - do-workshop
+      # - hold-for-approval:
+      #     type: approval
+      #     requires:
+      #       - build-docker
+      # - deploy-to-heroku:
+      #     requires:
+      #       - hold-for-approval
+      #     environment: prod
+      #     name: deploy-prod
+      #     context: workshop_deployment-dev
+
+  nightly-build:
+    when: << pipeline.parameters.scheduled >>
+    jobs:
+      - build-and-test:
+          matrix:
+            parameters:
+              node_version: ["16.14.0", "14.19.0", "17.6.0"]
+      - dependency-vulnerability-scan
+
