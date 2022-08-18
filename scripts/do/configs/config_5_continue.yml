@@ -1,0 +1,139 @@
+version: 2.1
+
+orbs: 
+  node: circleci/node@5.0.0
+  snyk: snyk/snyk@1.1.2
+  docker: circleci/docker@2.0.2
+  heroku: circleci/heroku@1.2.6
+
+parameters:
+  skip-run:
+    type: boolean
+    default: false
+  scheduled:
+    type: boolean
+    default: false
+
+jobs:
+  build-and-test:
+    parameters:
+      node_version:
+        type: string
+        default: 16.14.0
+    docker:
+      - image: cimg/node:<< parameters.node_version >>
+    parallelism: 4
+    steps:
+      - checkout
+      - node/install-packages
+      - run:
+          name: Run tests
+          command: |
+            echo $(circleci tests glob "test/**/*.test.js")
+            circleci tests glob "test/**/*.test.js" | circleci tests split |
+            xargs npm run test-ci
+      - run:
+          name: Copy tests results for storing
+          command: |
+            mkdir test-results
+            cp test-results.xml test-results/
+          when: always
+      - run:
+          name: Process test report
+          command: |
+              # Convert absolute paths to relative to support splitting tests by timing
+              if [ -e test-results.xml ]; then
+                sed -i "s|`pwd`/||g" test-results.xml
+              fi
+      - store_test_results:
+          path: test-results
+      - store_artifacts:
+          path: test-results
+
+  dependency-vulnerability-scan:
+    docker:
+      - image: cimg/node:16.14.0
+    steps:
+      - checkout
+      - node/install-packages
+      - snyk/scan:
+          fail-on-issues: true
+
+  build-docker:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - setup_remote_docker
+      - docker/check
+      - docker/build:
+          image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-1-march-22
+          tag: 0.1.<< pipeline.number >>
+      - docker/push:
+          image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-1-march-22
+          tag: 0.1.<< pipeline.number >>
+  
+  deploy-to-heroku:
+    parameters:
+      environment:
+        type: string
+        default: dev
+    docker: 
+      - image: cimg/base:stable
+    steps:
+      - heroku/install
+      - heroku/check-authentication
+      - checkout
+      - setup_remote_docker
+      - heroku/push-docker-image:
+          app-name: hello-circleci-connect-<< parameters.environment >>
+          process-types: web
+      - heroku/release-docker-image:
+          app-name: hello-circleci-connect-<< parameters.environment >>
+          process-types: web
+      
+workflows:
+  run-tests:
+    when:
+      and: 
+        - not: << pipeline.parameters.scheduled >>
+        - not: << pipeline.parameters.skip-run >>
+    jobs:
+      - build-and-test:
+          matrix:
+            parameters:
+              node_version: ["16.14.0", "14.19.0", "17.6.0" ]
+      - dependency-vulnerability-scan
+      - deploy-to-heroku:
+          name: Deploy - Dev
+          context: workshop_deployment-dev
+          environment: dev
+      - build-docker:
+          requires:
+            - build-and-test
+            - dependency-vulnerability-scan
+          filters:
+            branches:
+              only: main 
+      - hold-for-approval:
+          type: approval
+          requires: 
+            - build-docker
+      - deploy-to-heroku:
+          environment: prod
+          requires:
+            - hold-for-approval
+          context: workshop_deployment-prod
+
+  nightly-build:
+    when: << pipeline.parameters.scheduled >>
+    jobs:
+      - build-and-test:
+          matrix:
+            parameters:
+              node_version: ["16.14.0", "14.19.0", "17.6.0" ]
+      - dependency-vulnerability-scan
+      - deploy-to-heroku:
+          name: Deploy - Prod
+          context: workshop_deployment-dev
+          environment: dev

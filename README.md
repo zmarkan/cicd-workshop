@@ -10,7 +10,7 @@ Knowledge of Git version control system
 
 GitHub account - where the code is hosted
 
-A code editor - you can use 
+A code editor - you can use GitPod ...
 
 ## Chapter 0 - The Prologue and Prep
 
@@ -23,7 +23,7 @@ This lets you spin up an environment with all the dependencies preinstalled, rem
 
 ### Sign up for the required services that we'll use.
 
-Create an account with DigitalOcean.com - https://cloud.digitalocean.com/ We will use DigitalOcean to deploy our application to.
+Create an account with DigitalOcean.com - https://cloud.digitalocean.com/ We will use DigitalOcean to deploy our application to. 
 
 Create an account with Hashicorp Terraform - https://app.terraform.io/ We will use Terraform to provision our infrastructure on Digital Ocean.
 
@@ -47,19 +47,51 @@ The scripts to run are:
 
 The chapters will copy and overwrite certain files in your workspace, so after running each script, commit the changes and push it, which will run it on CircleCI.
 
+
+### Overview of the project
+
+The project is a simple web application, that is packaged in a Docker container, and deployed on Kubernetes - hosted on DigitalOcean infrastructure.
+We also have some tests, a security scan, building the image, provisioning the infrastructure, deploying it, and breaking it down.
+
+### Workshop flow
+
+Chap 1:
+
+- yaml
+- setting up the first pipeline
+- writing a job
+- running tests
+- deps without the orb (npm install)
+- using the orb
+- build the docker image & push to docker hub
+
+Chap 2:
+
+- run security scan w/ Snyk
+- Build the docker image
+- Terraform & DO
+- provision infrastructure
+- Deploy to infra
+- approve and destroy (explain approval job)
+
+
+
+### Terraform Cloud
+
+Terraform is a tool that helps you manage your cloud infrastructurte.
+
 ## Chapter 1 - Basics of CircleCI
 
-Fork this project!
 Most of our work will be in `./circleci/config.yml` - the CircleCI configuration file. This is where we will be describing our CI/CD pipelines.
 This workshop is written in chapters, so you can jump between them by running scripts in `srcipts/` dir, if you get lost and want to catch up with something.
-To begin, prepare your environment for the initial state by running the start script: `./scripts/chapter_0_start.sh`
+To begin, prepare your environment for the initial state by running the start script: `./scripts/do_0_start.sh`
 
 Go to app.circleci.com, log in with your GitHub account (or create a new one).
 Navigate to the `Projects` tab, and find this workshop project there - `cicd-workshop`.
 
 First we will create a basic continuous integration pipeline, which will run your tests each time you commit some code. Run a commit for each instruction.
 
-- Run: `./scripts/chapter_0_start.sh` to create the environment.
+- Run: `./scripts/do_0_start.sh` to create the environment.
 - In the `.circleci/config.yaml` find the `jobs` section, and add a job called `build-and-test`:
 
 ```yaml
@@ -136,7 +168,7 @@ jobs:
 
 In this section you will learn about the CircleCI orbs, various other types of checks you can implement, test optimisations, as well as deploy your application!
 
-If you got lost in the previous chapter, the initial state of the configuration is in `.circleci/chapters/config_1.yml`. You can restore it by running `./scripts/chapter_1.sh`.
+If you got lost in the previous chapter, the initial state of the configuration is in `.circleci/chapters/config_1.yml`. You can restore it by running `./scripts/do_1.sh`.
 
 ### Use Node orb
 
