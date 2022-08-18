@@ -63,22 +63,32 @@ Chap 1:
 - running tests
 - deps without the orb (npm install)
 - using the orb
+- Contexts and secrets
 - build the docker image & push to docker hub
 
 Chap 2:
 
-- run security scan w/ Snyk
+- Run security scan w/ Snyk
 - Build the docker image
-- Terraform & DO
-- provision infrastructure
+- Cloud native principles
+- Provision infrastructure with Terraform on DigitalOcean
 - Deploy to infra
-- approve and destroy (explain approval job
-- Contexts and secrets
+- approve and destroy (explain approval job)
 
 Chap 3:
 
+- Running test in matrix
 - Test splitting (populate with a long test)
+- Pipeline params & scheduled jobs
+- Branch and param filters
 
+Chap 4: 
+
+- Dynamic config
+
+Assignment: 
+
+- do something for swag and sense of personal accomplishment
 
 ### Terraform Cloud
 
