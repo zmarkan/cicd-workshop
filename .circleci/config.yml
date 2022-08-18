@@ -123,45 +123,45 @@ jobs:
               -var do_k8s_slug_ver=$DO_K8S_SLUG_VER \
               -auto-approve
 
-deploy_to_k8s:
-  docker:
-    - image: cimg/node:14.16.0
-  steps:
-    - checkout
-    - install_doctl:
-        version: "1.78.0"
-    - run:
-        name: Create .terraformrc file locally
-        command: echo "credentials \"app.terraform.io\" {token = \"$TERRAFORM_TOKEN\"}" > $HOME/.terraformrc
-    - terraform/install:
-        terraform_version: "1.0.6"
-        arch: "amd64"
-        os: "linux"
-    - terraform/init:
-        path: ./terraform/do_k8s_deploy_app
-    - run:
-        name: Deploy Application to K8s on DigitalOcean
-        command: |
-          export CLUSTER_NAME=${CIRCLE_PROJECT_REPONAME}
-          export TAG=0.0.<< pipeline.number >>
-          export DOCKER_IMAGE="${DOCKER_LOGIN}/${CIRCLE_PROJECT_REPONAME}:$TAG"
-          doctl auth init -t $DIGITAL_OCEAN_TOKEN
-          doctl kubernetes cluster kubeconfig save $CLUSTER_NAME
+  deploy_to_k8s:
+    docker:
+      - image: cimg/node:14.16.0
+    steps:
+      - checkout
+      - install_doctl:
+          version: "1.78.0"
+      - run:
+          name: Create .terraformrc file locally
+          command: echo "credentials \"app.terraform.io\" {token = \"$TERRAFORM_TOKEN\"}" > $HOME/.terraformrc
+      - terraform/install:
+          terraform_version: "1.0.6"
+          arch: "amd64"
+          os: "linux"
+      - terraform/init:
+          path: ./terraform/do_k8s_deploy_app
+      - run:
+          name: Deploy Application to K8s on DigitalOcean
+          command: |
+            export CLUSTER_NAME=${CIRCLE_PROJECT_REPONAME}
+            export TAG=0.0.<< pipeline.number >>
+            export DOCKER_IMAGE="${DOCKER_LOGIN}/${CIRCLE_PROJECT_REPONAME}:$TAG"
+            doctl auth init -t $DIGITAL_OCEAN_TOKEN
+            doctl kubernetes cluster kubeconfig save $CLUSTER_NAME
 
-          terraform -chdir=./terraform/do_k8s_deploy_app apply \
-            -var do_token=$DIGITAL_OCEAN_TOKEN \
-            -var cluster_name=$CLUSTER_NAME \
-            -var docker_image=$DOCKER_IMAGE \
-            -auto-approve
+            terraform -chdir=./terraform/do_k8s_deploy_app apply \
+              -var do_token=$DIGITAL_OCEAN_TOKEN \
+              -var cluster_name=$CLUSTER_NAME \
+              -var docker_image=$DOCKER_IMAGE \
+              -auto-approve
 
-          # Save the Load Balancer Public IP Address
-          export ENDPOINT="$(terraform -chdir=./terraform/do_k8s_deploy_app output lb_public_ip)"
-          mkdir -p /tmp/do_k8s/
-          echo 'export ENDPOINT='${ENDPOINT} > /tmp/do_k8s/dok8s-endpoint
-    - persist_to_workspace:
-        root: /tmp/do_k8s/
-        paths:
-          - "*"
+            # Save the Load Balancer Public IP Address
+            export ENDPOINT="$(terraform -chdir=./terraform/do_k8s_deploy_app output lb_public_ip)"
+            mkdir -p /tmp/do_k8s/
+            echo 'export ENDPOINT='${ENDPOINT} > /tmp/do_k8s/dok8s-endpoint
+      - persist_to_workspace:
+          root: /tmp/do_k8s/
+          paths:
+            - "*"
 
   smoketest_k8s_deployment:
     docker:
@@ -281,4 +281,3 @@ workflows:
             parameters:
               node_version: ["16.14.0", "14.19.0", "17.6.0"]
       - dependency-vulnerability-scan
-
