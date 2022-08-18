@@ -31,7 +31,7 @@ jobs:
     parameters:
       node_version:
         type: string
-        default: 16.17.0
+        default: 16.16.0
     docker:
       - image: cimg/node:<< parameters.node_version >>
     parallelism: 4
@@ -64,7 +64,7 @@ jobs:
 
   dependency-vulnerability-scan:
     docker:
-      - image: cimg/node:16.17.0
+      - image: cimg/node:16.16.0
     steps:
       - checkout
       - node/install-packages
@@ -95,7 +95,7 @@ jobs:
 
   create_do_k8s_cluster:
     docker:
-      - image: cimg/node:16.17.0
+      - image: cimg/node:16.16.0
     steps:
       - checkout
       - install_doctl:
