@@ -72,8 +72,12 @@ Chap 2:
 - Terraform & DO
 - provision infrastructure
 - Deploy to infra
-- approve and destroy (explain approval job)
+- approve and destroy (explain approval job
+- Contexts and secrets
 
+Chap 3:
+
+- Test splitting (populate with a long test)
 
 
 ### Terraform Cloud

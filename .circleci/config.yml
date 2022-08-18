@@ -238,9 +238,6 @@ workflows:
             - build-and-test
             - dependency-vulnerability-scan
           context: do-workshop
-          filters:
-            branches:
-              only: main
       - create_do_k8s_cluster:
           context:
             - do-workshop
@@ -248,6 +245,7 @@ workflows:
           requires:
             - create_do_k8s_cluster
             - build_scan_docker_image
+
           context:
             - do-workshop
       - smoketest_k8s_deployment:
@@ -262,16 +260,6 @@ workflows:
             - approve_destroy
           context:
             - do-workshop
-      # - hold-for-approval:
-      #     type: approval
-      #     requires:
-      #       - build-docker
-      # - deploy-to-heroku:
-      #     requires:
-      #       - hold-for-approval
-      #     environment: prod
-      #     name: deploy-prod
-      #     context: workshop_deployment-dev
 
   nightly-build:
     when: << pipeline.parameters.scheduled >>
