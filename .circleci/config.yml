@@ -234,9 +234,6 @@ workflows:
               node_version: ["16.14.0", "14.19.0", "17.6.0"]
       - dependency-vulnerability-scan
       - build_scan_docker_image:
-          requires:
-            - build-and-test
-            - dependency-vulnerability-scan
           context: do-workshop
       - create_do_k8s_cluster:
           context:
@@ -245,7 +242,7 @@ workflows:
           requires:
             - create_do_k8s_cluster
             - build_scan_docker_image
-
+            - build-and-test
           context:
             - do-workshop
       - smoketest_k8s_deployment:
