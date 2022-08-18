@@ -87,7 +87,7 @@ jobs:
           fail-on-issues: false
           monitor-on-build: false
           target-file: "Dockerfile"
-          docker-image-name: $DOCKER_LOGIN/$IMAGE_NAME:$TAG
+          docker-image-name: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME:0.1.<< pipeline.number >>
           project: ${CIRCLE_PROJECT_REPONAME}/${CIRCLE_BRANCH}-app
       - docker/push:
           image: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME
