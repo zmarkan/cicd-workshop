@@ -83,12 +83,12 @@ jobs:
       - docker/build:
           image: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME
           tag: 0.1.<< pipeline.number >>
-      - snyk/scan:
-          fail-on-issues: false
-          monitor-on-build: false
-          target-file: "Dockerfile"
-          docker-image-name: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME:0.1.<< pipeline.number >>
-          project: ${CIRCLE_PROJECT_REPONAME}/${CIRCLE_BRANCH}-app
+      # - snyk/scan:
+      #     fail-on-issues: false
+      #     monitor-on-build: false
+      #     target-file: "Dockerfile"
+      #     docker-image-name: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME:0.1.<< pipeline.number >>
+      #     project: ${CIRCLE_PROJECT_REPONAME}/${CIRCLE_BRANCH}-app
       - docker/push:
           image: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME
           tag: 0.1.<< pipeline.number >>
