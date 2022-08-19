@@ -113,7 +113,6 @@ jobs:
           name: Create K8s Cluster on DigitalOcean
           command: |
             export CLUSTER_NAME=${CIRCLE_PROJECT_REPONAME}
-            export TAG=0.0.<< pipeline.number >>
             export DO_K8S_SLUG_VER="$(doctl kubernetes options versions \
               -o json -t $DIGITAL_OCEAN_TOKEN | jq -r '.[0] | .slug')"
 
@@ -143,7 +142,7 @@ jobs:
           name: Deploy Application to K8s on DigitalOcean
           command: |
             export CLUSTER_NAME=${CIRCLE_PROJECT_REPONAME}
-            export TAG=0.0.<< pipeline.number >>
+            export TAG=0.1.<< pipeline.number >>
             export DOCKER_IMAGE="${DOCKER_LOGIN}/${CIRCLE_PROJECT_REPONAME}:$TAG"
             doctl auth init -t $DIGITAL_OCEAN_TOKEN
             doctl kubernetes cluster kubeconfig save $CLUSTER_NAME
@@ -195,7 +194,7 @@ jobs:
           name: Destroy App Deployment
           command: |
             export CLUSTER_NAME=${CIRCLE_PROJECT_REPONAME}
-            export TAG=0.0.<< pipeline.number >>
+            export TAG=0.1.<< pipeline.number >>
             export DOCKER_IMAGE="${DOCKER_LOGIN}/${CIRCLE_PROJECT_REPONAME}:$TAG"          
             doctl auth init -t $DIGITAL_OCEAN_TOKEN
             doctl kubernetes cluster kubeconfig save $CLUSTER_NAME
@@ -212,7 +211,6 @@ jobs:
           name: Destroy K8s Cluster
           command: |
             export CLUSTER_NAME=${CIRCLE_PROJECT_REPONAME}
-            export TAG=0.0.<< pipeline.number >>
             export DO_K8S_SLUG_VER="$(doctl kubernetes options versions \
               -o json -t $DIGITAL_OCEAN_TOKEN | jq -r '.[0] | .slug')"
 
