@@ -25,7 +25,7 @@ describe("Welcome to CI/CD Server", function() {
   describe("welcomeMessage", function (){
     it("Validate Message", function(){
       var res = helloWorld.welcomeMessage();
-      var message = "Welcome to the CityJS CircleCI Demo!";
+      var message = "Welcome to the CircleCI Demo!";
       assert.strictEqual(res, message);
     });  
   });
