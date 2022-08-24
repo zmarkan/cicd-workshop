@@ -10,11 +10,12 @@ A code editor - you can use GitPod ...
 
 Fork this project! You will need a GitHub account.
 
-This project can run on your machine if you have the correct dependencies installed (Git, Terraform, DigitalOcean CLI, Node.js) - or it can also run in a cloud based environment using GitPod!
+This project can run on your machine if you have the correct dependencies installed (Git, Terraform, DigitalOcean CLI, Node.js), or it can also run in a cloud based environment using Gitpod (we recommend Gitpod for best experience).
 
 [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/zmarkan/cicd-workshop)
 
-This lets you spin up an environment with all the dependencies preinstalled, remotely connect to it, and work as it was on your machine. We suggest doing that route, as it will be much faster.
+This lets you spin up an environment with all the dependencies preinstalled, remotely connect to it, and work on it as it was on your machine. This is much faster, believe us, we measured it with science. 
+
 
 
 ### Sign up for the required services that we'll use.
