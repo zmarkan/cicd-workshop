@@ -1,15 +1,9 @@
 # CI/CD Workshop with CircleCI
 
-## Slides - CircleCI(connect) Berlin - 31 March 2022
-
-https://docs.google.com/presentation/d/1vYt1CR5v3FYNj5xnqm58dhlIUwq1pB3DewBU1VC_oN0/edit?usp=sharing
-
 ## Prerequisites
 
 Knowledge of Git version control system
-
 GitHub account - where the code is hosted
-
 A code editor - you can use GitPod ...
 
 ## Chapter 0 - The Prologue and Prep

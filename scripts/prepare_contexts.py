@@ -17,6 +17,7 @@ docker_pw = creds.get('docker_pw')
 
 # CIRCLECI_CONTEXT_ID = creds.get('circleci_context_id')
 SNYK_TOKEN = creds.get('snyk_token')
+DOCKER_USERNAME = creds.get('docker_username')
 DOCKER_TOKEN = creds.get('docker_token')
 TF_CLOUD_KEY = creds.get('tf_cloud_key')
 DIGITALOCEAN_TOKEN = creds.get('digitalocean_token')
@@ -53,6 +54,9 @@ circleci_context_id = context_res.get("id")
 
 # Add Env vars to context
 print(add_circle_token_to_context(circleci_context_id, "SNYK_TOKEN", SNYK_TOKEN))
+print(add_circle_token_to_context(circleci_context_id, "DOCKER_LOGIN", DOCKER_USERNAME))
 print(add_circle_token_to_context(circleci_context_id, "DOCKER_TOKEN", DOCKER_TOKEN))
 print(add_circle_token_to_context(circleci_context_id, "TF_CLOUD_KEY", TF_CLOUD_KEY))
 print(add_circle_token_to_context(circleci_context_id, "DIGITALOCEAN_TOKEN", DIGITALOCEAN_TOKEN))
+
+# TODO: add other necessary env vars???

@@ -3,11 +3,22 @@
 # and commit this file to your remote git repository to share the goodness with others.
 
 tasks:
-  - init: | 
+  - name: Swap origin to our upstream(fork)
+    init: |
+      if upstream="$(git -C "$GITPOD_REPO_ROOT" config --get remote.upstream.url)"; then {
+        origin="$(git -C "$GITPOD_REPO_ROOT" config --get remote.origin.url)";
+        origin="${origin#http*://}"; origin="${origin%.git}";
+        sed -i -E "s|(https?://)?${origin}(.git)?|${upstream}|g" README.md
+      } fi
+      exit;
+  - name: Install Terraform CLI
+    init: |
       wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
       echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
       sudo apt update && sudo apt install terraform
-      # wget https://github.com/digitalocean/doctl/releases/download/v1.78.0/doctl-1.78.0-linux-amd64.tar.gz -P ~/
-      # tar xf ~/doctl-1.78.0-linux-amd64.tar.gz
-      # sudo mv ~/doctl /usr/local/bin
+  - name: Install Digital Ocean CLI
+    init: |
+      wget https://github.com/digitalocean/doctl/releases/download/v1.78.0/doctl-1.78.0-linux-amd64.tar.gz -P ~/
+      tar xf ~/doctl-1.78.0-linux-amd64.tar.gz
+      sudo mv ~/doctl /usr/local/bin
 
