@@ -106,4 +106,8 @@ dist
 
 # Local test results
 test-results.xml
-super-secret-ftw
+
+# Creds to import into CircleCI
+credentials.toml
+
+

@@ -178,6 +178,13 @@ jobs:
 
 ```
 
+### Secrets and Contexts
+
+CircleCI lets you store secrets safely on the platform where they will be encrypted and only made available to the executors as environment variables.
+Th
+
+
+
 🎉 Congratulations, you've completed the first part of the exercise!
 
 ## Chapter 2 - Intermediate CI/CD
