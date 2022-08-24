@@ -16,19 +16,48 @@ This project can run on your machine if you have the correct dependencies instal
 
 This lets you spin up an environment with all the dependencies preinstalled, remotely connect to it, and work on it as it was on your machine. This is much faster, believe us, we measured it with science. 
 
-### Prepare your environment
+### If NOT using Gitpod
 
+If you are using Gitpod you're good, everything you need should have been installed already.
 
+The commands used here are mostly using Bash, Git, and Python 3 - make sure they are installed.
 
-### Sign up for the required services that we'll use.
+Copy over the credentials source file. This is untracked in Git and will be used by a script to populate your CircleCI secret variables.
 
-Create an account with DigitalOcean.com - https://cloud.digitalocean.com/ We will use DigitalOcean to deploy our application to. 
+```
+cp credentials.sample.toml credentials.toml
+```
 
-Create an account with Hashicorp Terraform - https://app.terraform.io/ We will use Terraform to provision our infrastructure on Digital Ocean.
+### Sign up for the required services and prepare credentials
 
-Create an account with Docker Hub - https://hub.docker.com/ We will use Docker Hub as a repository for our app images.
+#### DigitalOcean
 
-Create an account with Snyk - https://app.snyk.io/ - We will use Snyk to run an automated security scan of our application an its dependencies. 
+- Create an account with DigitalOcean - https://cloud.digitalocean.com/ We will use DigitalOcean to deploy our application to. 
+- Go to API (left)
+- Generate New Token with read and write access
+- copy the token string to `credentials.toml` - `digitalocean_token`
+ 
+#### Terraform Cloud
+
+- Create an account with Hashicorp Terraform - https://app.terraform.io/ We will use Terraform to provision our infrastructure on Digital Ocean.
+- Got to your user settings (top right), and select Tokens
+- Create an API token 
+- Copy the token string to `credentials.toml` - `tf_cloud_key`
+
+#### Docker Hub
+
+- Create an account with Docker Hub - https://hub.docker.com/ We will use Docker Hub as a repository for our app images.
+- Go to your user settings (top right), and select Security
+- Create New Access Token
+- copy your username to `credentials.toml` - `docker_username`
+- copy your token string to `credentials.toml` - `docker_token`
+
+#### Snyk
+
+- Create an account with Snyk - https://app.snyk.io/ - We will use Snyk to run an automated security scan of our application an its dependencies. 
+- Go to your Account settings (top right)
+- Click to show Auth Token 
+- Copy your token string to `credentials.toml` - `snyk_token`
 
 ### How this workshop works
 
@@ -40,12 +69,11 @@ The scripts to run are:
 
 `./scripts/do_0_start.sh` - Beginning of first chapter
 `./scripts/do_1.sh` - End of first chapter/Start of second chapter
-`./scripts/do_2.sh` -
-`./scripts/do_3.sh` - 
-`./scripts/do_4.sh` - 
+`./scripts/do_2.sh` - End of second chapter/Start of third chapter
+`./scripts/do_3.sh` - You get the gist
+`./scripts/do_4.sh` - The rest left as an excercise to the reader
 
 The chapters will copy and overwrite certain files in your workspace, so after running each script, commit the changes and push it, which will run it on CircleCI.
-
 
 ### Overview of the project
 
