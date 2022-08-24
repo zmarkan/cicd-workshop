@@ -16,6 +16,8 @@ This project can run on your machine if you have the correct dependencies instal
 
 This lets you spin up an environment with all the dependencies preinstalled, remotely connect to it, and work on it as it was on your machine. This is much faster, believe us, we measured it with science. 
 
+### Prepare your environment
+
 
 
 ### Sign up for the required services that we'll use.

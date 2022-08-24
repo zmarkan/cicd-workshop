@@ -21,4 +21,7 @@ tasks:
       wget https://github.com/digitalocean/doctl/releases/download/v1.78.0/doctl-1.78.0-linux-amd64.tar.gz -P ~/
       tar xf ~/doctl-1.78.0-linux-amd64.tar.gz
       sudo mv ~/doctl /usr/local/bin
+  - name: Prepare credentials file
+    init: |
+      cp credentials.sample.toml credentials.toml
 
