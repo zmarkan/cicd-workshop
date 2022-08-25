@@ -319,49 +319,23 @@ workflows:
 
 🎉 Congratulations, you've completed the first part of the exercise!
 
-## Chapter 2 - Intermediate CI/CD
+## Chapter 2 - A realistic CI/CD pipeline
 
-In this section you will learn about the CircleCI orbs, various other types of checks you can implement, test optimisations, as well as deploy your application!
+In this section you will learn about cloud native paradigms, shift left security scanning, infrastructure provisioning, and deployment of infrastructure!
 
-If you got lost in the previous chapter, the initial state of the configuration is in `.circleci/chapters/config_1.yml`. You can restore it by running `./scripts/do_1.sh`.
-
-### Use Node orb
-
-- First let's replace our existing process for dependency installation and running tests by using an orb - this saves you a lot of configuration and manages caching for you. Introduce the orb: 
-
-```yaml
-version: 2.1
-
-orbs: 
-    node: circleci/node@5.0.0
-```
-
-- Replace the job caching and dependency installation code with the call to the `node/install_packages` in the Node orb:
-
-```yaml
-jobs:
-  build_and_test:
-    ...
-    steps:
-        - checkout
-        - node/install-packages
-        - run:
-            name: Run tests
-            command: npm run test-ci
-```
+If you got lost in the previous chapter, the initial state of the configuration is in `scripts/do/configs/config_2.yml`. You can restore it by running `./scripts/do_2.sh`.
 
 ### Integrate automated dependency vulnerability scan
 
-- Now let's integrate a security scanning tool in our process. We will use Snyk - https://snyk.io for this. You can create a free Snyk account by logging in with your GitHub credentials. Get a Snyk Auth token by going to your Account Settings - https://app.snyk.io/account.
-
-- Add the Auth token to your environment variables - `SNYK_TOKEN`
+- First let's integrate a security scanning tool in our process. We will use Snyk, for which you should already have the account created and environment variable set.
 
 - Add Snyk orb: 
 
 ```yaml
 orbs: 
-    node: circleci/node@5.0.0
-    snyk: snyk/snyk@1.1.2
+  node: circleci/node@5.0.2
+  docker: circleci/docker@2.1.1
+  snyk: snyk/snyk@1.2.3
 ```
 
 - Add dependency vulnerability scan job:
@@ -369,26 +343,57 @@ orbs:
 ```yaml
 jobs:
 ...
-  dependency-vulnerability-scan:
+  dependency_vulnerability_scan:
     docker:
-      - image: cimg/node:16.14.0
+      - image: cimg/node:16.16.0
     steps:
       - checkout
       - node/install-packages
       - snyk/scan:
           fail-on-issues: true
+          monitor-on-build: false
 ```
 
-- Add the job to workflow:
+- Add the job to workflow. Don't forget to give it the context!:
 
 ```yaml
 workflows:
-  run-tests:
-    jobs:
-      - build_and_test
-      - dependency-vulnerability-scan
-
+  test_scan_deploy:
+      jobs:
+        - build_and_test
+        - dependency_vulnerability_scan:
+            context:
+              - cicd-workshop
+        - build_docker_image:
+            context:
+              - cicd-workshop
 ```
+
+- This will now run the automated security scan for your dependencies and fail your job if any of them have known vulnerabilities. Now let's add the security scan to our Docker image build job as well:
+
+```yaml
+  build_docker_image:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: false
+      - docker/check
+      - docker/build:
+          image: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME
+          tag: 0.1.<< pipeline.number >>
+      - snyk/scan:
+          fail-on-issues: false
+          monitor-on-build: false
+          target-file: "Dockerfile"
+          docker-image-name: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME:0.1.<< pipeline.number >>
+          project: ${CIRCLE_PROJECT_REPONAME}/${CIRCLE_BRANCH}-app
+      - docker/push:
+          image: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME
+          tag: 0.1.<< pipeline.number >>
+```
+
 ### Employing parallelism - running tests in a matrix
 
 We often want to test the same code across different variants of the application. We can employ matrix with CircleCI for that.
@@ -418,7 +423,7 @@ workflows:
           matrix:
             parameters:
               node_version: ["16.14.0", "14.19.0", "17.6.0" ]
-      - dependency-vulnerability-scan
+      - dependency_vulnerability_scan
       ...
 ```
 
@@ -528,7 +533,7 @@ workflows:
   run-tests:
     jobs:
       - build_and_test
-      - dependency-vulnerability-scan
+      - dependency_vulnerability_scan
       - build-docker
 ```
 
@@ -539,11 +544,11 @@ workflows:
   run-tests:
     jobs:
       - build_and_test
-      - dependency-vulnerability-scan
+      - dependency_vulnerability_scan
       - build-docker:
           requires:
             - build_and_test
-            - dependency-vulnerability-scan
+            - dependency_vulnerability_scan
 ```
 
 ### Deploy the containerized application to Heroku
@@ -588,11 +593,11 @@ workflows:
   run-tests:
     jobs:
       - build_and_test
-      - dependency-vulnerability-scan
+      - dependency_vulnerability_scan
       - build-docker:
           requires:
             - build_and_test
-            - dependency-vulnerability-scan
+            - dependency_vulnerability_scan
       - deploy-to-heroku:
           requires:
             - build-docker
@@ -618,7 +623,7 @@ workflows:
       - build-docker:
           requires:
             - build_and_test
-            - dependency-vulnerability-scan
+            - dependency_vulnerability_scan
           filters:
             branches:
               only: main
@@ -654,7 +659,7 @@ workflows:
       - build-docker:
           requires:
             - build_and_test
-            - dependency-vulnerability-scan
+            - dependency_vulnerability_scan
           filters:
             branches:
               only: main
@@ -706,7 +711,7 @@ workflows:
   run-tests:
     jobs:
       ...
-      - dependency-vulnerability-scan
+      - dependency_vulnerability_scan
       - deploy-to-heroku:
           context: workshop_deployment-dev
           environment: dev
@@ -756,7 +761,7 @@ workflows:
           matrix:
             parameters:
               node_version: ["16.14.0", "14.19.0", "17.6.0" ]
-      - dependency-vulnerability-scan
+      - dependency_vulnerability_scan
       - deploy-to-heroku:
           context: workshop_deployment-dev
           environment: dev

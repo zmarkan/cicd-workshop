@@ -62,7 +62,7 @@ jobs:
       - store_artifacts:
           path: test-results
 
-  dependency-vulnerability-scan:
+  dependency_vulnerability_scan:
     docker:
       - image: cimg/node:16.16.0
     steps:
@@ -230,7 +230,7 @@ workflows:
           matrix:
             parameters:
               node_version: ["16.14.0", "14.19.0", "17.6.0"]
-      - dependency-vulnerability-scan
+      - dependency_vulnerability_scan
       - build_docker_image:
           context: do-workshop
       - create_do_k8s_cluster:
@@ -263,4 +263,4 @@ workflows:
           matrix:
             parameters:
               node_version: ["16.14.0", "14.19.0", "17.6.0"]
-      - dependency-vulnerability-scan
+      - dependency_vulnerability_scan
