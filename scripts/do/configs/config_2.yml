@@ -41,6 +41,9 @@ jobs:
             tag: 0.1.<< pipeline.number >>
       
 workflows:
-  run-tests:
-    jobs:
-      - build_and_test
+  test_scan_deploy:
+      jobs:
+        - build_and_test
+        - build_docker_image:
+            requires:
+              - build_and_test
