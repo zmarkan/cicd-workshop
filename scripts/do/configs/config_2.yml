@@ -1,20 +1,16 @@
 version: 2.1
 
+orbs:
+  node: circleci/node@5.0.2
+  docker: circleci/docker@2.1.1
+
 jobs:
-  build-and-test:
+  build_and_test:
     docker:
-      - image: cimg/node:16.14.0
+      - image: cimg/node:16.16.0
     steps:
       - checkout
-      - restore_cache:
-          key: v1-deps-{{ checksum "package-lock.json" }}
-      - run:
-          name: Install deps
-          command: npm install
-      - save_cache:
-          key: v1-deps-{{ checksum "package-lock.json" }}
-          paths: 
-            - node_modules   
+      - node/install-packages
       - run:
           name: Run tests
           command: npm run test-ci
@@ -28,8 +24,23 @@ jobs:
           path: test-results
       - store_artifacts:
           path: test-results
+
+  build_docker_image:
+      docker:
+        - image: cimg/base:stable
+      steps:
+        - checkout
+        - setup_remote_docker:
+            docker_layer_caching: false
+        - docker/check
+        - docker/build:
+            image: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME
+            tag: 0.1.<< pipeline.number >>
+        - docker/push:
+            image: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME
+            tag: 0.1.<< pipeline.number >>
       
 workflows:
   run-tests:
     jobs:
-      - build-and-test
+      - build_and_test
