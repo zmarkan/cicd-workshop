@@ -131,12 +131,12 @@ Navigate to the `Projects` tab, and find this workshop project there - `cicd-wor
 First we will create a basic continuous integration pipeline, which will run your tests each time you commit some code. Run a commit for each instruction.
 
 - Run: `./scripts/do_0_start.sh` to create the environment.
-- In the `.circleci/config.yaml` find the `jobs` section, and add a job called `build-and-test`:
+- In the `.circleci/config.yaml` find the `jobs` section, and add a job called `build_and_test`:
 
 ```yaml
 ...
 jobs:
-  build-and-test:
+  build_and_test:
     docker:
       - image: cimg/node:16.16.0
     steps:
@@ -155,14 +155,14 @@ jobs:
 workflows:
   test_scan_deploy:
     jobs:
-      - build-and-test
+      - build_and_test
 ```
 
-- Report test results to CircleCI. Add the following run commands to `build-and-test` job:
+- Report test results to CircleCI. Add the following run commands to `build_and_test` job:
 
 ```yaml
 jobs:
-  build-and-test:
+  build_and_test:
     ...
       - run:
           name: Run tests
@@ -182,7 +182,7 @@ jobs:
 
 ```yaml
 jobs:
-    build-and-test:
+    build_and_test:
     ...
     steps:
         - checkout
@@ -201,7 +201,7 @@ jobs:
 
 ```
 
-### Using the orb instead of 
+### Using the orb instead of installing and caching dependencies manually
 
 Now let's replace our existing process for dependency installation and running tests by using an orb - this saves you a lot of configuration and manages caching for you. Introduce the orb: 
 
@@ -216,7 +216,7 @@ orbs:
 
 ```yaml
 jobs:
-  build-and-test:
+  build_and_test:
     ...
     steps:
         - checkout
@@ -250,26 +250,58 @@ Most of the things you do in CircleCI web interface can also be done with the AP
 
 ### Building and deploying a Docker image
 
+- First introduce the Docker orb:
+
+```yaml
+orbs:
+  node: circleci/node@5.0.2
+  docker: circleci/docker@2.1.1
+```
+
 - Add a new job:
 
 ```yaml
-build_docker_image:
-    docker:
-      - image: cimg/base:stable
-    steps:
-      - checkout
-      - setup_remote_docker:
-          docker_layer_caching: false
-      - docker/check
-      - docker/build:
-          image: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME
-          tag: 0.1.<< pipeline.number >>
-      - docker/push:
-          image: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME
-          tag: 0.1.<< pipeline.number >>
+jobs:
+...
+  build_docker_image:
+      docker:
+        - image: cimg/base:stable
+      steps:
+        - checkout
+        - setup_remote_docker:
+            docker_layer_caching: false
+        - docker/check
+        - docker/build:
+            image: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME
+            tag: 0.1.<< pipeline.number >>
+        - docker/push:
+            image: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME
+            tag: 0.1.<< pipeline.number >>
 ```
 
+In the workflow, add the deployment job:
 
+```yaml
+workflows:
+  test_scan_deploy:
+    jobs:
+      - build_and_test
+      - build_docker_image
+
+```
+
+This runs both jobs in parallel. We might want to run them sequentially instead, so Docker deployment only happens when the tests have passed. Do this by adding a `requires` stanza to the `build_docker_image` job:
+
+```yaml
+workflows:
+  test_scan_deploy:
+      jobs:
+        - build_and_test
+        - build_docker_image:
+            requires:
+              - build_and_test
+
+```
 
 🎉 Congratulations, you've completed the first part of the exercise!
 
@@ -294,7 +326,7 @@ orbs:
 
 ```yaml
 jobs:
-  build-and-test:
+  build_and_test:
     ...
     steps:
         - checkout
@@ -339,7 +371,7 @@ jobs:
 workflows:
   run-tests:
     jobs:
-      - build-and-test
+      - build_and_test
       - dependency-vulnerability-scan
 
 ```
@@ -347,11 +379,11 @@ workflows:
 
 We often want to test the same code across different variants of the application. We can employ matrix with CircleCI for that.
 
-- Create a new job parameter for `build-and-test` job, and use its value in the selected image:
+- Create a new job parameter for `build_and_test` job, and use its value in the selected image:
 
 ```yaml
 jobs:
-  build-and-test:
+  build_and_test:
     parameters:
       node_version:
         type: string
@@ -368,7 +400,7 @@ jobs:
 workflows:
   run-tests:
     jobs:
-      - build-and-test:
+      - build_and_test:
           matrix:
             parameters:
               node_version: ["16.14.0", "14.19.0", "17.6.0" ]
@@ -385,7 +417,7 @@ This sets up the tests to run in a matrix, in parallel. But we must go further. 
 ```yaml
 ...
 jobs:
-  build-and-test:
+  build_and_test:
     ...
     steps:
           - checkout
@@ -403,7 +435,7 @@ jobs:
 
 ```yaml
 jobs:
-  build-and-test:
+  build_and_test:
     ...
     docker:
       - image: cimg/node:<< parameters.node-version >>
@@ -415,7 +447,7 @@ jobs:
 
 ```yaml
 jobs:
-  build-and-test:
+  build_and_test:
     ...
     steps:
           - checkout
@@ -481,7 +513,7 @@ orbs:
 workflows:
   run-tests:
     jobs:
-      - build-and-test
+      - build_and_test
       - dependency-vulnerability-scan
       - build-docker
 ```
@@ -492,11 +524,11 @@ workflows:
 workflows:
   run-tests:
     jobs:
-      - build-and-test
+      - build_and_test
       - dependency-vulnerability-scan
       - build-docker:
           requires:
-            - build-and-test
+            - build_and_test
             - dependency-vulnerability-scan
 ```
 
@@ -541,11 +573,11 @@ deploy-to-heroku:
 workflows:
   run-tests:
     jobs:
-      - build-and-test
+      - build_and_test
       - dependency-vulnerability-scan
       - build-docker:
           requires:
-            - build-and-test
+            - build_and_test
             - dependency-vulnerability-scan
       - deploy-to-heroku:
           requires:
@@ -571,7 +603,7 @@ workflows:
       ...
       - build-docker:
           requires:
-            - build-and-test
+            - build_and_test
             - dependency-vulnerability-scan
           filters:
             branches:
@@ -607,7 +639,7 @@ workflows:
       ...
       - build-docker:
           requires:
-            - build-and-test
+            - build_and_test
             - dependency-vulnerability-scan
           filters:
             branches:
@@ -706,7 +738,7 @@ workflows:
   nightly-build:
     when: << pipeline.parameters.scheduled >>
     jobs:
-      - build-and-test:
+      - build_and_test:
           matrix:
             parameters:
               node_version: ["16.14.0", "14.19.0", "17.6.0" ]
@@ -724,7 +756,7 @@ workflows:
     when:
       not: << pipeline.parameters.scheduled >>
     jobs:
-      - build-and-test:
+      - build_and_test:
       ...
 ```
 
@@ -817,7 +849,7 @@ workflows:
         - not: << pipeline.parameters.scheduled >>
         - not: << pipeline.parameters.skip-run >>
     jobs:
-      - build-and-test:
+      - build_and_test:
       ...
 ```
 

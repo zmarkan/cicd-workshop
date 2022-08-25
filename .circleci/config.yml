@@ -7,8 +7,8 @@ parameters:
 
 orbs:
   node: circleci/node@5.0.2
-  snyk: snyk/snyk@1.2.3
   docker: circleci/docker@2.1.1
+  snyk: snyk/snyk@1.2.3
   terraform: circleci/terraform@3.0.0
 
 commands:
@@ -27,7 +27,7 @@ commands:
             sudo mv ~/doctl /usr/local/bin
 
 jobs:
-  build-and-test:
+  build_and_test:
     parameters:
       node_version:
         type: string
@@ -226,7 +226,7 @@ workflows:
       and:
         - not: << pipeline.parameters.scheduled >>
     jobs:
-      - build-and-test:
+      - build_and_test:
           matrix:
             parameters:
               node_version: ["16.14.0", "14.19.0", "17.6.0"]
@@ -240,7 +240,7 @@ workflows:
           requires:
             - create_do_k8s_cluster
             - build_docker_image
-            - build-and-test
+            - build_and_test
           context:
             - do-workshop
       - smoketest_k8s_deployment:
@@ -259,7 +259,7 @@ workflows:
   nightly-build:
     when: << pipeline.parameters.scheduled >>
     jobs:
-      - build-and-test:
+      - build_and_test:
           matrix:
             parameters:
               node_version: ["16.14.0", "14.19.0", "17.6.0"]
