@@ -435,7 +435,17 @@ commands:
 
 - In app.terraform.io create a new organization, and give it a name. Create a new workspace called `cicd-workshop-do`. 
 In the workspace GUI, go to `Settings`, and make sure to switch the `Execution Mode` to `Local`.
-Replace the value `YOUR_TF_ORG_NAME` with the name you gave to your organization.
+
+- In the file `terraform/do_create_k8s/main.tf` locate the `backend "remote"` section and make sure to change the name to your organization:
+
+```go
+  backend "remote" {
+    organization = "your_cicd_workshop_org"
+    workspaces {
+      name = "cicd-workshop-do"
+    }
+  }
+```
 
 Add a job to create a Terraform cluster
 
@@ -464,7 +474,6 @@ create_do_k8s_cluster:
               -o json -t $DIGITAL_OCEAN_TOKEN | jq -r '.[0] | .slug')"
 
             terraform -chdir=./terraform/do_create_k8s apply \
-              -var organization="YOUR_TF_ORG_NAME"
               -var do_token=$DIGITAL_OCEAN_TOKEN \
               -var cluster_name=$CLUSTER_NAME \
               -var do_k8s_slug_ver=$DO_K8S_SLUG_VER \
