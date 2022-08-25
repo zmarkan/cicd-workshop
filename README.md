@@ -20,15 +20,17 @@ This lets you spin up an environment with all the dependencies preinstalled, rem
 
 If you are using Gitpod you're good, everything you need should have been installed already.
 
-The commands used here are mostly using Bash, Git, and Python 3 - make sure they are installed.
+The commands used here are mostly using Bash, Git, and Python 3 - make sure they are installed and available. If using Windows, the commands might be different than the ones listed here.
 
 Copy over the credentials source file. This is untracked in Git and will be used by a script to populate your CircleCI secret variables.
 
 ```
-cp credentials.sample.toml credentials.toml
+cp scripts/util/credentials.sample.toml credentials.toml
 ```
 
-### Sign up for the required services and prepare credentials
+### IMPORTANT! Sign up for the required services and prepare credentials
+
+If you don't do this, you'll have a bad time.
 
 #### DigitalOcean
 
@@ -67,67 +69,63 @@ To jump between chapters we have prepared a set of handy scripts you can run in 
 
 The scripts to run are:
 
-`./scripts/do_0_start.sh` - Beginning of first chapter
-`./scripts/do_1.sh` - End of first chapter/Start of second chapter
-`./scripts/do_2.sh` - End of second chapter/Start of third chapter
-`./scripts/do_3.sh` - You get the gist
-`./scripts/do_4.sh` - The rest left as an excercise to the reader
+`./scripts/do_1_start.sh` - Beginning of first chapter
+`./scripts/do_2.sh` - End of first chapter/Start of second chapter
+`./scripts/do_3.sh` - End of second chapter/Start of third chapter
+`./scripts/do_4.sh` - Final state
+`./scripts/do_5_dynamic.sh` - Final state using Dynamic configuration
 
 The chapters will copy and overwrite certain files in your workspace, so after running each script, commit the changes and push it, which will run it on CircleCI.
 
 ### Overview of the project
 
-The project is a simple web application, that is packaged in a Docker container, and deployed on Kubernetes - hosted on DigitalOcean infrastructure.
-We also have some tests, a security scan, building the image, provisioning the infrastructure, deploying it, and breaking it down.
+The project is a simple web application, that is packaged in a Docker container, and deployed on Kubernetes - hosted on DigitalOcean infrastructure. 
+We also have some tests, a security scan, building the image, provisioning the infrastructure and deploying the application.
 
-### Workshop flow
+### Workshop topics covered
 
-Chap 1:
+#### Chapter 1 - Basics of CI/CD
 
-- yaml
-- setting up the first pipeline
-- writing a job
-- running tests
-- deps without the orb (npm install)
-- using the orb
-- Contexts and secrets
-- build the docker image & push to docker hub
+- YAML
+- Setting up the first pipeline
+- Writing a job and workflow
+- Running tests
+- Reporting test results
+- Installing dependencies manually
+- Caching dependencies
+- Using the orb to install and cache dependencies 
+- Setting up secrets and contexts
+- Build the docker image & push to docker hub
 
-Chap 2:
+#### Chapter 2 - A realistic CI/CD pipeline
 
 - Run security scan w/ Snyk
-- Build the docker image
 - Cloud native principles
 - Provision infrastructure with Terraform on DigitalOcean
-- Deploy to infra
+- Deploy to infrastructure
+- Run a smoke test on deployed app
+- Destroy the deployed application and provisioned infrastructure
+- Manual approval step before destroy
 - approve and destroy (explain approval job)
 
-Chap 3:
+#### Chapter 3 - Advanced CircleCI concepts
 
-- Running test in matrix
-- Test splitting (populate with a long test)
-- Pipeline params & scheduled jobs
-- Branch and param filters
+- Running test in matrix across multiple versions
+- Using test splitting to tear down a long running test suite
+- Filtering pipelines on branches and tags
+- Scheduling pipelines and using pipeline parametres to drive the flow
 
-Chap 4: 
+#### Chapter 4 - Using Dynamic Configuration to select what gets built when
 
-- Dynamic config
-
-Assignment: 
-
-- do something for swag and sense of personal accomplishment
-
-### Terraform Cloud
-
-Terraform is a tool that helps you manage your cloud infrastructurte.
+- Add a flow that only build the application and run tests if files outside of scripts have changed
 
 ## Chapter 1 - Basics of CircleCI
 
 Most of our work will be in `./circleci/config.yml` - the CircleCI configuration file. This is where we will be describing our CI/CD pipelines.
 This workshop is written in chapters, so you can jump between them by running scripts in `srcipts/` dir, if you get lost and want to catch up with something.
-To begin, prepare your environment for the initial state by running the start script: `./scripts/do_0_start.sh`
+To begin, prepare your environment for the initial state by running the start script: `./scripts/do_1_start.sh`
 
-Go to app.circleci.com, log in with your GitHub account (or create a new one).
+Go to app.circleci.com, and if you haven't yet, log in with your GitHub account (or create a new one).
 Navigate to the `Projects` tab, and find this workshop project there - `cicd-workshop`.
 
 First we will create a basic continuous integration pipeline, which will run your tests each time you commit some code. Run a commit for each instruction.
@@ -140,7 +138,7 @@ First we will create a basic continuous integration pipeline, which will run you
 jobs:
   build-and-test:
     docker:
-      - image: cimg/node:16.14.0
+      - image: cimg/node:16.16.0
     steps:
       - checkout
       - run:
@@ -155,7 +153,7 @@ jobs:
 
 ```yaml
 workflows:
-  run-tests:
+  test_scan_deploy:
     jobs:
       - build-and-test
 ```
@@ -203,10 +201,73 @@ jobs:
 
 ```
 
+### Using the orb instead of 
+
+Now let's replace our existing process for dependency installation and running tests by using an orb - this saves you a lot of configuration and manages caching for you. Introduce the orb: 
+
+```yaml
+version: 2.1
+
+orbs: 
+    node: circleci/node@5.0.2
+```
+
+- Replace the job caching and dependency installation code with the call to the `node/install_packages` in the Node orb:
+
+```yaml
+jobs:
+  build-and-test:
+    ...
+    steps:
+        - checkout
+        - node/install-packages
+        - run:
+            name: Run tests
+            command: npm run test-ci
+```
+
 ### Secrets and Contexts
 
-CircleCI lets you store secrets safely on the platform where they will be encrypted and only made available to the executors as environment variables.
-Th
+CircleCI lets you store secrets safely on the platform where they will be encrypted and only made available to the executors as environment variables. The first secrets you will need are credentials for Docker Hub which you'll use to deploy your image to Docker Hub.
+
+We have prepared a script for you to create a context and set it up with all the secrets you will need in CircleCI. This will use the CircleCI API.
+
+You should have all the required accounts for third party services already, and are just missing the CircleCI API token and the organization ID:
+
+- In app.circleci.com click on your user image (bottom left)
+- Go to Personal API Tokens 
+- Generate new API token and insert it `credentials.toml`
+- In app.circleci.com click on the Organization settings. 
+- Copy the Organization ID value and insert it in `credentials.toml`
+
+Make sure that you have all the required service variables set in `credentials.toml`, and then run the script:
+
+```bash
+python scripts/prepare_contexts.py
+```
+
+Most of the things you do in CircleCI web interface can also be done with the API. You can inspect the newly created context and secrets by going to your organization settings. Now we can create a new job to build and deploy a Docker image.
+
+### Building and deploying a Docker image
+
+- Add a new job:
+
+```yaml
+build_docker_image:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: false
+      - docker/check
+      - docker/build:
+          image: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME
+          tag: 0.1.<< pipeline.number >>
+      - docker/push:
+          image: $DOCKER_LOGIN/$CIRCLE_PROJECT_REPONAME
+          tag: 0.1.<< pipeline.number >>
+```
 
 
 
