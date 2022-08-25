@@ -394,6 +394,108 @@ workflows:
           tag: 0.1.<< pipeline.number >>
 ```
 
+### Cloud Native deployments
+
+We often use CI/CD pipelines to create our infrastructure, not just run our applications. In the following steps we will be doing just that.
+
+First make sure you have all the credentials created and set in your `cicd-workshop` context:
+- DIGITALOCEAN_TOKEN
+- TF_CLOUD_KEY
+
+This tells a cloud provider - in our case Digitalocean - what to create for us, so we can deploy our application. We will use a tool called Terraform for it.
+
+- Add the orb for Terraform
+
+```yaml
+orbs:
+  node: circleci/node@5.0.2
+  docker: circleci/docker@2.1.1
+  snyk: snyk/snyk@1.2.3
+  terraform: circleci/terraform@3.0.0
+```
+
+- Add a command to install the Digitalocean CLI - `doctl`. This will be reusable in all jobs across the entire pipeline:
+
+```yaml
+commands:
+  install_doctl:
+    parameters:
+      version:
+        default: "1.79.0"
+        type: string
+    steps:
+      - run:
+          name: Install doctl client
+          command: |
+            cd ~
+            wget https://github.com/digitalocean/doctl/releases/download/v<<parameters.version>>/doctl-<<parameters.version>>-linux-amd64.tar.gz
+            tar xf ~/doctl-<<parameters.version>>-linux-amd64.tar.gz
+            sudo mv ~/doctl /usr/local/bin
+```
+
+- In app.terraform.io create a new organization, and give it a name. Create a new workspace called `cicd-workshop-do`. 
+In the workspace GUI, go to `Settings`, and make sure to switch the `Execution Mode` to `Local`.
+Replace the value `YOUR_TF_ORG_NAME` with the name you gave to your organization.
+
+Add a job to create a Terraform cluster
+
+```yaml
+create_do_k8s_cluster:
+    docker:
+      - image: cimg/node:16.16.0
+    steps:
+      - checkout
+      - install_doctl:
+          version: "1.78.0"
+      - run:
+          name: Create .terraformrc file locally
+          command: echo "credentials \"app.terraform.io\" {token = \"$TERRAFORM_TOKEN\"}" > $HOME/.terraformrc
+      - terraform/install:
+          terraform_version: "1.0.6"
+          arch: "amd64"
+          os: "linux"
+      - terraform/init:
+          path: ./terraform/do_create_k8s
+      - run:
+          name: Create K8s Cluster on DigitalOcean
+          command: |
+            export CLUSTER_NAME=${CIRCLE_PROJECT_REPONAME}
+            export DO_K8S_SLUG_VER="$(doctl kubernetes options versions \
+              -o json -t $DIGITAL_OCEAN_TOKEN | jq -r '.[0] | .slug')"
+
+            terraform -chdir=./terraform/do_create_k8s apply \
+              -var organization="YOUR_TF_ORG_NAME"
+              -var do_token=$DIGITAL_OCEAN_TOKEN \
+              -var cluster_name=$CLUSTER_NAME \
+              -var do_k8s_slug_ver=$DO_K8S_SLUG_VER \
+              -auto-approve
+
+```
+
+
+Add the new job to the workflow:
+
+```yaml
+workflows:
+  test_scan_deploy:
+      jobs:
+        - build_and_test
+        - dependency_vulnerability_scan:
+            context:
+              - cicd-workshop
+        - build_docker_image:
+            context:
+              - cicd-workshop
+        - create_do_k8s_cluster:
+            context:
+              - do-workshop
+```
+
+
+
+
+
+
 ### Employing parallelism - running tests in a matrix
 
 We often want to test the same code across different variants of the application. We can employ matrix with CircleCI for that.
