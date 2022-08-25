@@ -4,6 +4,7 @@ orbs:
   node: circleci/node@5.0.2
   docker: circleci/docker@2.1.1
   snyk: snyk/snyk@1.2.3
+  terraform: circleci/terraform@3.0.0
 
 commands:
   install_doctl:
