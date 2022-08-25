@@ -23,5 +23,5 @@ tasks:
       sudo mv ~/doctl /usr/local/bin
   - name: Prepare credentials file
     init: |
-      cp credentials.sample.toml credentials.toml
+      cp scripts/util/credentials.sample.toml credentials.toml
 
