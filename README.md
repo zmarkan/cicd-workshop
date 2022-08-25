@@ -459,7 +459,7 @@ create_do_k8s_cluster:
           version: "1.78.0"
       - run:
           name: Create .terraformrc file locally
-          command: echo "credentials \"app.terraform.io\" {token = \"$TERRAFORM_TOKEN\"}" > $HOME/.terraformrc
+          command: echo "credentials \"app.terraform.io\" {token = \"$TF_CLOUD_KEY\"}" > $HOME/.terraformrc
       - terraform/install:
           terraform_version: "1.0.6"
           arch: "amd64"
