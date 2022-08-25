@@ -290,6 +290,19 @@ workflows:
 
 ```
 
+This doesn't run unfortunately - our `build_docker_image` doesn't have the required credentials. 
+Add the context we created earlier:
+
+```yaml
+workflows:
+  test_scan_deploy:
+      jobs:
+        - build_and_test
+        - build_docker_image:
+            context:
+              - cicd-workshop
+```
+
 This runs both jobs in parallel. We might want to run them sequentially instead, so Docker deployment only happens when the tests have passed. Do this by adding a `requires` stanza to the `build_docker_image` job:
 
 ```yaml
@@ -298,9 +311,10 @@ workflows:
       jobs:
         - build_and_test
         - build_docker_image:
+            context:
+              - cicd-workshop
             requires:
               - build_and_test
-
 ```
 
 🎉 Congratulations, you've completed the first part of the exercise!
