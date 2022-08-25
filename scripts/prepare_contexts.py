@@ -17,7 +17,7 @@ docker_pw = creds.get('docker_pw')
 
 # CIRCLECI_CONTEXT_ID = creds.get('circleci_context_id')
 SNYK_TOKEN = creds.get('snyk_token')
-DOCKER_USERNAME = creds.get('docker_username')
+DOCKER_USERNAME = creds.get('docker_login')
 DOCKER_TOKEN = creds.get('docker_token')
 TF_CLOUD_KEY = creds.get('tf_cloud_key')
 DIGITALOCEAN_TOKEN = creds.get('digitalocean_token')
@@ -39,17 +39,36 @@ def circleci_api_request(method, endpoint, payload_dict):
 def add_circle_token_to_context(context_id, env_var_name, env_var_value):
   return circleci_api_request("PUT", f'context/{context_id}/environment-variable/{env_var_name}', { "value": env_var_value })
 
-# Create CircleCI context and get ID
-context_payload = {
+
+contexts = circleci_api_request("GET", f'context?owner-id={CIRCLECI_ORG_ID}&owner-type=organization', None).get('items')
+context = next(ctx for ctx in contexts if ctx.get('name') == 'cicd-workshop')
+
+if context == None:
+  # Create CircleCI context and get ID
+  context_payload = {
     "name": CIRCLECI_CONTEXT_NAME,
       "owner": {
         "id": CIRCLECI_ORG_ID,
         "type": "organization"
       }
-}
+  }
+  context = circleci_api_request("POST", f'context', context_payload)
+  
+circleci_context_id = context.get("id")
 
-context_res = circleci_api_request("POST", f'context', context_payload)
-circleci_context_id = context_res.get("id")
+
+
+# # Create CircleCI context and get ID
+# context_payload = {
+#     "name": CIRCLECI_CONTEXT_NAME,
+#       "owner": {
+#         "id": CIRCLECI_ORG_ID,
+#         "type": "organization"
+#       }
+# }
+
+# context_res = circleci_api_request("POST", f'context', context_payload)
+# circleci_context_id = context_res.get("id")
 # TODO: check if the context already exists...
 
 # Add Env vars to context
