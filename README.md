@@ -497,7 +497,7 @@ workflows:
               - cicd-workshop
         - create_do_k8s_cluster:
             context:
-              - do-workshop
+              - cicd-workshop
 ```
 
 
