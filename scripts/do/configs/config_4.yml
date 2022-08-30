@@ -114,10 +114,10 @@ jobs:
           command: |
             export CLUSTER_NAME=${CIRCLE_PROJECT_REPONAME}
             export DO_K8S_SLUG_VER="$(doctl kubernetes options versions \
-              -o json -t $DIGITAL_OCEAN_TOKEN | jq -r '.[0] | .slug')"
+              -o json -t $DIGITALOCEAN_TOKEN | jq -r '.[0] | .slug')"
 
             terraform -chdir=./terraform/do_create_k8s apply \
-              -var do_token=$DIGITAL_OCEAN_TOKEN \
+              -var do_token=$DIGITALOCEAN_TOKEN \
               -var cluster_name=$CLUSTER_NAME \
               -var do_k8s_slug_ver=$DO_K8S_SLUG_VER \
               -auto-approve
@@ -144,11 +144,11 @@ jobs:
             export CLUSTER_NAME=${CIRCLE_PROJECT_REPONAME}
             export TAG=0.1.<< pipeline.number >>
             export DOCKER_IMAGE="${DOCKER_LOGIN}/${CIRCLE_PROJECT_REPONAME}:$TAG"
-            doctl auth init -t $DIGITAL_OCEAN_TOKEN
+            doctl auth init -t $DIGITALOCEAN_TOKEN
             doctl kubernetes cluster kubeconfig save $CLUSTER_NAME
 
             terraform -chdir=./terraform/do_k8s_deploy_app apply \
-              -var do_token=$DIGITAL_OCEAN_TOKEN \
+              -var do_token=$DIGITALOCEAN_TOKEN \
               -var cluster_name=$CLUSTER_NAME \
               -var docker_image=$DOCKER_IMAGE \
               -auto-approve
@@ -196,11 +196,11 @@ jobs:
             export CLUSTER_NAME=${CIRCLE_PROJECT_REPONAME}
             export TAG=0.1.<< pipeline.number >>
             export DOCKER_IMAGE="${DOCKER_LOGIN}/${CIRCLE_PROJECT_REPONAME}:$TAG"          
-            doctl auth init -t $DIGITAL_OCEAN_TOKEN
+            doctl auth init -t $DIGITALOCEAN_TOKEN
             doctl kubernetes cluster kubeconfig save $CLUSTER_NAME
 
             terraform -chdir=./terraform/do_k8s_deploy_app/ apply -destroy \
-              -var do_token=$DIGITAL_OCEAN_TOKEN \
+              -var do_token=$DIGITALOCEAN_TOKEN \
               -var cluster_name=$CLUSTER_NAME \
               -var docker_image=$DOCKER_IMAGE \
               -auto-approve
@@ -212,10 +212,10 @@ jobs:
           command: |
             export CLUSTER_NAME=${CIRCLE_PROJECT_REPONAME}
             export DO_K8S_SLUG_VER="$(doctl kubernetes options versions \
-              -o json -t $DIGITAL_OCEAN_TOKEN | jq -r '.[0] | .slug')"
+              -o json -t $DIGITALOCEAN_TOKEN | jq -r '.[0] | .slug')"
 
             terraform -chdir=./terraform/do_create_k8s apply -destroy \
-              -var do_token=$DIGITAL_OCEAN_TOKEN \
+              -var do_token=$DIGITALOCEAN_TOKEN \
               -var cluster_name=$CLUSTER_NAME \
               -var do_k8s_slug_ver=$DO_K8S_SLUG_VER \
               -auto-approve

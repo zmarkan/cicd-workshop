@@ -481,7 +481,6 @@ create_do_k8s_cluster:
 
 ```
 
-
 Add the new job to the workflow:
 
 ```yaml
@@ -498,6 +497,93 @@ workflows:
         - create_do_k8s_cluster:
             context:
               - cicd-workshop
+```
+
+### Deploying to your Kubernetes cluster 
+
+Now that you have provisioned your infrastructure - a Kubernetes cluster on Digitalocean. It's time to deploy the application to this cluster.
+
+- In app.terraform.io create a new workspace called `deploy-cicd-workshop-do`. 
+In the workspace GUI, go to `Settings`, and make sure to switch the `Execution Mode` to `Local`. You should now have two workspaces. One holds the infrastructure definitions, and one for deployments.
+
+- In the file `terraform/do_k8s_deploy_app/main.tf` locate the `backend "remote"` section and make sure to change the name to your organization:
+
+```go
+  backend "remote" {
+    organization = "your_cicd_workshop_org"
+    workspaces {
+      name = "cicd-workshop-do"
+    }
+  }
+```
+
+Add a job `deploy_to_k8s` which will perform the deployment:
+
+```yaml
+
+deploy_to_k8s:
+    docker:
+      - image: cimg/node:14.16.0
+    steps:
+      - checkout
+      - install_doctl:
+          version: "1.78.0"
+      - run:
+          name: Create .terraformrc file locally
+          command: echo "credentials \"app.terraform.io\" {token = \"$TF_CLOUD_KEY\"}" > $HOME/.terraformrc
+      - terraform/install:
+          terraform_version: "1.0.6"
+          arch: "amd64"
+          os: "linux"
+      - terraform/init:
+          path: ./terraform/do_k8s_deploy_app
+      - run:
+          name: Deploy Application to K8s on DigitalOcean
+          command: |
+            export CLUSTER_NAME=${CIRCLE_PROJECT_REPONAME}
+            export TAG=0.1.<< pipeline.number >>
+            export DOCKER_IMAGE="${DOCKER_LOGIN}/${CIRCLE_PROJECT_REPONAME}:$TAG"
+            doctl auth init -t $DIGITALOCEAN_TOKEN
+            doctl kubernetes cluster kubeconfig save $CLUSTER_NAME
+
+            terraform -chdir=./terraform/do_k8s_deploy_app apply \
+              -var do_token=$DIGITALOCEAN_TOKEN \
+              -var cluster_name=$CLUSTER_NAME \
+              -var docker_image=$DOCKER_IMAGE \
+              -auto-approve
+
+            # Save the Load Balancer Public IP Address
+            export ENDPOINT="$(terraform -chdir=./terraform/do_k8s_deploy_app output lb_public_ip)"
+            mkdir -p /tmp/do_k8s/
+            echo 'export ENDPOINT='${ENDPOINT} > /tmp/do_k8s/dok8s-endpoint
+      - persist_to_workspace:
+          root: /tmp/do_k8s/
+          paths:
+            - "*"
+
+```
+
+- Add the new job to the workflow - add `requires` statements to only start deployment when all prior steps have completed
+
+```yaml
+workflows:
+  test_scan_deploy:
+    when:
+      and:
+        - not: << pipeline.parameters.scheduled >>
+    jobs:
+      ...
+      - create_do_k8s_cluster:
+            context:
+              - cicd-workshop
+      - deploy_to_k8s:
+          requires:
+            - dependency_vulnerability_scan
+            - build_docker_image
+            - build_and_test
+            - create_do_k8s_cluster
+          context:
+            - cicd-workshop
 ```
 
 
