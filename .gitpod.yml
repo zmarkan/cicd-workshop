@@ -3,14 +3,6 @@
 # and commit this file to your remote git repository to share the goodness with others.
 
 tasks:
-  - name: Swap origin to our upstream(fork)
-    init: |
-      if upstream="$(git -C "$GITPOD_REPO_ROOT" config --get remote.upstream.url)"; then {
-        origin="$(git -C "$GITPOD_REPO_ROOT" config --get remote.origin.url)";
-        origin="${origin#http*://}"; origin="${origin%.git}";
-        sed -i -E "s|(https?://)?${origin}(.git)?|${upstream}|g" README.md
-      } fi
-      exit;
   - name: Install Terraform CLI
     init: |
       wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
