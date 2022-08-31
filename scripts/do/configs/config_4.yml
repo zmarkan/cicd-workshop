@@ -219,6 +219,8 @@ jobs:
               -var cluster_name=$CLUSTER_NAME \
               -var do_k8s_slug_ver=$DO_K8S_SLUG_VER \
               -auto-approve
+  
+  
 
 workflows:
   test_scan_deploy:
