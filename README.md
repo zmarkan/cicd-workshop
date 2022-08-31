@@ -481,7 +481,7 @@ create_do_k8s_cluster:
 
 ```
 
-Add the new job to the workflow:
+Add the new job to the workflow. Add `requires` statements to only start deployment when all prior steps have completed
 
 ```yaml
 workflows:
@@ -495,8 +495,13 @@ workflows:
             context:
               - cicd-workshop
         - create_do_k8s_cluster:
+            requires:
+              - dependency_vulnerability_scan
+              - build_docker_image
+              - build_and_test
             context:
               - cicd-workshop
+            
 ```
 
 ### Deploying to your Kubernetes cluster 
@@ -563,7 +568,7 @@ deploy_to_k8s:
 
 ```
 
-- Add the new job to the workflow - add `requires` statements to only start deployment when all prior steps have completed
+- Add the new job to the workflow - add `requires` statements to only start deployment when cluster creation job has completed
 
 ```yaml
 workflows:
@@ -575,9 +580,6 @@ workflows:
               - cicd-workshop
       - deploy_to_k8s:
           requires:
-            - dependency_vulnerability_scan
-            - build_docker_image
-            - build_and_test
             - create_do_k8s_cluster
           context:
             - cicd-workshop
@@ -837,17 +839,20 @@ workflows:
 
 We sometimes don't want to run the entire pipeline on every commit - maybe we only want to conduct the deployment when merging into the `main` branch, but not on feature branches.
 
-Add a `filters` section to your infrastructure creation step:
+Add a `filters` section to your cluster creation step:
 
 ```yaml
 workflows:
   run-tests:
     jobs:
       ...
-      - build-docker:
+      - create_do_k8s_cluster:
           requires:
-            - build_and_test
             - dependency_vulnerability_scan
+            - build_docker_image
+            - build_and_test
+          context:
+            - cicd-workshop
           filters:
             branches:
               only: main

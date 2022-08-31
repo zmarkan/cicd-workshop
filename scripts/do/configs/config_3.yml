@@ -206,13 +206,14 @@ workflows:
             context:
               - cicd-workshop
         - create_do_k8s_cluster:
-            context:
-              - cicd-workshop
-        - deploy_to_k8s:
             requires:
               - dependency_vulnerability_scan
               - build_docker_image
               - build_and_test
+            context:
+              - cicd-workshop
+        - deploy_to_k8s:
+            requires:
               - create_do_k8s_cluster
             context:
               - cicd-workshop
