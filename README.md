@@ -731,8 +731,10 @@ workflows:
 
 The `approve_destroy` had a special type set - `approval` which means we don't have to define it and it will give us the option to manually confirm we want to continue executing the workflow.
 
-🎉 Congratulations! You have reached to the end of chapter 3 with a fully fledged Kubernetes provisioning and deployment in a CI/CD pipeline!
+🎉 Congratulations! You have reached to the end of chapter 2 with a fully fledged Kubernetes provisioning and deployment in a CI/CD pipeline!
 
+
+## Chapter 3 - Advanced CI/CD
 
 
 👆 Done up to that point 👆
