@@ -905,60 +905,11 @@ workflows:
 
 This effectively lets us to route the workflow execution based on the pipeline parameter which is set.
 
-
-
-👆 Done up to that point 👆
-
-
-### Set up a nightly build to deploy dev version of the application
-
-- In `Project Settings` choose the `Triggers` tab and add a new trigger. Set it to run each day at 0:00 UTC, 1 per hour, off `main` branch. Add pipeline parameter `scheduled` set to `true`.
-
-- Create a new boolean pipeline parameter in the config - `scheduled` which defaults to false:
-
-```yaml
-parameters:
-  scheduled:
-    type: boolean
-    default: false
-```
-
-- Create a new workflow called `nightly_build` that only runs when `scheduled` is true:
-
-```yaml
-workflows:
-  ...
-  nightly-build:
-    when: << pipeline.parameters.scheduled >>
-    jobs:
-      - build_and_test:
-          matrix:
-            parameters:
-              node_version: ["16.14.0", "14.19.0", "17.6.0" ]
-      - dependency_vulnerability_scan
-      - deploy-to-heroku:
-          context: workshop_deployment-dev
-          environment: dev
-```
-
-- Add the `when/not` rule to the `run-tests` workflow:
-
-```yaml
-workflows:
-  run-tests:
-    when:
-      not: << pipeline.parameters.scheduled >>
-    jobs:
-      - build_and_test:
-      ...
-```
-
-
-🎉 Contratulations, you have completed the chapter, and created a complex CI/CD pipeline with access control.
+🎉 Contratulations, you have completed the chapter, and optimised your CI/CD pipeline further!
 
 ## Chapter 4 - Dynamic Config
 
-You can reset the state for this by running `.scripts/chapter_3.sh`
+You can reset the state for this by running `.scripts/do_4.sh`
 
 So far our config has been pretty straightforward. Trigger on commit or schedule would run our pipeline. But sometimes we want more flexibility, based on some external factors.
 
@@ -968,7 +919,7 @@ Dynamic config lets you change what your pipeline does while it's already runnin
 - Copy your existing `config.yml` to `.circleci/continue-config.yml`:
 
 ```bash
-cp .circleci/config.yml continue-config.yml
+cp .circleci/config.yml .circleci/continue-config.yml
 ```
 
 - Add `setup: true` stanza to your `config.yml`: 
@@ -1032,7 +983,7 @@ parameters:
     default: false
 ```
 
-- Add the `skip-run` parameters to `when not` condition in the `run-tests` workflow:
+- Add the `skip-run` parameters to `when not` condition in the `test_scan_deploy` workflow:
 
 ```yaml
 workflows:

@@ -10,6 +10,9 @@ parameters:
   scheduled:
     type: boolean
     default: false
+  skip-run:
+    type: boolean
+    default: false
 
 commands:
   install_doctl:
@@ -217,8 +220,10 @@ jobs:
       
 workflows:
   test_scan_deploy:
-      when:  
-        not: << pipeline.parameters.scheduled >>
+      when:
+        and: 
+          - not: << pipeline.parameters.scheduled >>
+          - not: << pipeline.parameters.skip-run >>
       jobs:
         - build_and_test:
             matrix:
