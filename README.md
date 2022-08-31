@@ -746,7 +746,7 @@ To get to the starting point, run:
 
 This will copy over a bunch of long running tests to simulate your application growing. Commit and see that tests now run for around 5 minutes, much longer than before.
 
-### Employing parallelism - Test Splitting
+### Employing parallelism - splitting long running tests
 
 - To make our tests run faster we can try several things. My favourite is employing parallelism and run them across multiple parallel jobs. First introduce the parallelism value in `build_and_test` job:
 
@@ -833,7 +833,26 @@ workflows:
       ...
 ```
 
-This sets up the tests to run in a matrix, in parallel. But we must go further. Our tests still run for too long, so we can split them across multiple jobs.
+### Choosing what gets run by filtering branches
+
+We sometimes don't want to run the entire pipeline on every commit - maybe we only want to conduct the deployment when merging into the `main` branch, but not on feature branches.
+
+Add a `filters` section to your infrastructure creation step:
+
+```yaml
+workflows:
+  run-tests:
+    jobs:
+      ...
+      - build-docker:
+          requires:
+            - build_and_test
+            - dependency_vulnerability_scan
+          filters:
+            branches:
+              only: main
+      ...
+```
 
 ### Test splitting
 
@@ -841,216 +860,6 @@ This sets up the tests to run in a matrix, in parallel. But we must go further. 
 👆 Done up to that point 👆
 
 
-### Employing parallelism - running tests in a matrix
-
-We often want to test the same code across different variants of the application. We can employ matrix with CircleCI for that.
-
-- Create a new job parameter for `build_and_test` job, and use its value in the selected image:
-
-```yaml
-jobs:
-  build_and_test:
-    parameters:
-      node_version:
-        type: string
-        default: 16.14.0
-    docker:
-      - image: cimg/node:<< parameters.node_version >>
-    steps:
-      - checkout
-```
-
-- Pass matrix of versions as parameters for the job in the workflow definition:
-
-```yaml
-workflows:
-  run-tests:
-    jobs:
-      - build_and_test:
-          matrix:
-            parameters:
-              node_version: ["16.14.0", "14.19.0", "17.6.0" ]
-      - dependency_vulnerability_scan
-      ...
-```
-
-This sets up the tests to run in a matrix, in parallel. But we must go further. Our tests still run for too long, so we can split them across multiple jobs.
-
-### Split tests
-
-- Change run test command to use CircleCI's test splitting feature:
-
-```yaml
-...
-jobs:
-  build_and_test:
-    ...
-    steps:
-          - checkout
-          - node/install-packages
-          - run:          
-              name: Run tests
-              command: |
-                echo $(circleci tests glob "test/**/*.test.js")
-                circleci tests glob "test/**/*.test.js" | circleci tests split |
-                xargs npm run test-ci
-          ...
-```
-
-- Set job `parallelism` parameter:
-
-```yaml
-jobs:
-  build_and_test:
-    ...
-    docker:
-      - image: cimg/node:<< parameters.node-version >>
-    parallelism: 4
-    ...
-```
-
-- Make sure test results are merged correctly:
-
-```yaml
-jobs:
-  build_and_test:
-    ...
-    steps:
-          - checkout
-          ...
-          - run:
-            name: Copy tests results for storing
-            command: |
-              mkdir test-results
-              cp test-results.xml test-results/
-            when: always
-          - run:
-              name: Process test report
-              command: |
-                  # Convert absolute paths to relative to support splitting tests by timing
-                  if [ -e test-results.xml ]; then
-                    sed -i "s|`pwd`/||g" test-results.xml
-                  fi
-          - store_test_results:
-              path: test-results
-          - store_artifacts:
-              path: test-results
-          ...
-```
-
-### Build a Docker image & Deploy it to the registry
-
-Each time the tests pass we will build a Docker image with the web app.
-
-- Create Docker Hub account if you don't already have one - https://docker.com
-- Get add Docker Hub account name to environment variables: `DOCKER_LOGIN`, and `DOCKER_PASSWORD`
-- Add the Docker orb:
-
-```yaml
-orbs: 
-  node: circleci/node@5.0.0
-  snyk: snyk/snyk@1.1.2
-  docker: circleci/docker@2.0.2
-```
-
-- Add a job to build a docker image and push it to Docker Hub
-
-```yaml
- jobs:
-  ... 
-  build-docker:
-    docker:
-      - image: cimg/base:stable
-    steps:
-      - checkout
-      - setup_remote_docker
-      - docker/check
-      - docker/build:
-          image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-31-march-22
-          tag: 0.1.<< pipeline.number >>
-      - docker/push:
-          image: $DOCKER_LOGIN/${CIRCLE_PROJECT_REPONAME}-31-march-22
-          tag: 0.1.<< pipeline.number >>
-```
-
-- Add job to workflow:
-
-```yaml
-workflows:
-  run-tests:
-    jobs:
-      - build_and_test
-      - dependency_vulnerability_scan
-      - build-docker
-```
-
-- Add `requires` stanza to the job in the workflow, which ensures that verification jobs must complete before building the Docker image.
-
-```yaml
-workflows:
-  run-tests:
-    jobs:
-      - build_and_test
-      - dependency_vulnerability_scan
-      - build-docker:
-          requires:
-            - build_and_test
-            - dependency_vulnerability_scan
-```
-
-### Deploy the containerized application to Heroku
-
-Heroku is a service for hosting applications with a free tier & no card required
-
-- Create a Heroku account & grab your API key, store in environment variable: `HEROKU_API_KEY`
-- Create a Heroku application - I named mine `hello-circleci-connect-dev`
-- Add Heroku orb:
-
-```yaml
-orbs: 
-  node: circleci/node@5.0.0
-  snyk: snyk/snyk@1.1.2
-  docker: circleci/docker@2.0.2
-  heroku: circleci/heroku@1.2.6
-```
-
-- Add deployment job:
-
-```yaml
-deploy-to-heroku:
-    docker: 
-      - image: cimg/base:stable
-    steps:
-      - heroku/install
-      - heroku/check-authentication
-      - checkout
-      - setup_remote_docker
-      - heroku/push-docker-image:
-          app-name: hello-circleci-connect-dev
-          process-types: web
-      - heroku/release-docker-image:
-          app-name: hello-circleci-connect-dev
-          process-types: web
-```
-
-- Add job to workflow after image is built:
-
-```yaml
-workflows:
-  run-tests:
-    jobs:
-      - build_and_test
-      - dependency_vulnerability_scan
-      - build-docker:
-          requires:
-            - build_and_test
-            - dependency_vulnerability_scan
-      - deploy-to-heroku:
-          requires:
-            - build-docker
-```
-
-🎉 Contratulations, you have completed the second chapter, and created a full CI/CD pipeline that builds, verifies, and deploys your application!
 
 ## Chapter 3 - Advanced CircleCI  
 
