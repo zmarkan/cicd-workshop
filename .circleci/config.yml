@@ -217,6 +217,8 @@ jobs:
       
 workflows:
   test_scan_deploy:
+      when:  
+        not: << pipeline.parameters.scheduled >>
       jobs:
         - build_and_test:
             matrix:

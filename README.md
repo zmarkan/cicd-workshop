@@ -903,7 +903,7 @@ workflows:
       ...
 ```
 
-
+This effectively lets us to route the workflow execution based on the pipeline parameter which is set.
 
 
 
