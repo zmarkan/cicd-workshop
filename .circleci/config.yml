@@ -265,7 +265,9 @@ workflows:
           matrix:
             parameters:
               node_version: ["16.16.0", "14.19.0", "17.6.0" ]
-      - dependency_vulnerability_scan
+      - dependency_vulnerability_scan:
+          context:   
+            - cicd-workshop
       - build_docker_image:
-            context:
-              - cicd-workshop
+          context:
+            - cicd-workshop
