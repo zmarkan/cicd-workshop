@@ -135,6 +135,19 @@ jobs:
           root: /tmp/do_k8s/
           paths:
             - "*"
+    
+  smoketest_k8s_deployment:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /tmp/do_k8s/
+      - run:
+          name: Smoke Test K8s App Deployment
+          command: |
+            source /tmp/do_k8s/dok8s-endpoint
+            ./test/smoke_test $ENDPOINT
       
 workflows:
   test_scan_deploy:
