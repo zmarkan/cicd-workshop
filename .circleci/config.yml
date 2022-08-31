@@ -135,7 +135,6 @@ jobs:
           root: /tmp/do_k8s/
           paths:
             - "*"
-
       
 workflows:
   test_scan_deploy:
@@ -158,3 +157,6 @@ workflows:
               - create_do_k8s_cluster
             context:
               - cicd-workshop
+        - smoketest_k8s_deployment:
+            requires:
+              - deploy_to_k8s
