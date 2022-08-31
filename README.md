@@ -859,143 +859,56 @@ workflows:
       ...
 ```
 
-### Test splitting
+### Run a nightly scheduled pipeline
+
+
+- In `Project Settings` choose the `Triggers` tab and add a new trigger. Set it to run each day at 0:00 UTC, 1 per hour, off `main` branch. Add pipeline parameter `scheduled` set to `true`.
+
+- Create a new boolean pipeline parameter in the config - `scheduled` which defaults to false:
+
+```yaml
+parameters:
+  scheduled:
+    type: boolean
+    default: false
+```
+
+- Create a new workflow called `nightly_build` that only runs when `scheduled` is true:
+
+```yaml
+workflows:
+  ...
+  nightly-build:
+    when: << pipeline.parameters.scheduled >>
+    jobs:
+      - build_and_test:
+          matrix:
+            parameters:
+              node_version: ["16.16.0", "14.19.0", "17.6.0" ]
+      - dependency_vulnerability_scan
+      - build_docker_image:
+            context:
+              - cicd-workshop
+```
+
+- Add the `when/not` rule to the `run-tests` workflow:
+
+```yaml
+workflows:
+  test_scan_deploy:
+    when:
+      not: << pipeline.parameters.scheduled >>
+    jobs:
+      - build_and_test:
+      ...
+```
+
+
+
 
 
 👆 Done up to that point 👆
 
-
-
-## Chapter 3 - Advanced CircleCI  
-
-In this section you will learn about advanced features of CircleCI for access control, scheduling, and more!
-
-If you got lost in the previous chapter, the initial state of the configuration is in `.circleci/chapters/config_2.yml`. You can restore it by running `./scripts/chapter_2.sh`.
-
-### Access and flow control
-
-- Only deploy from `main` branch, using `filters` in the workflow:
-
-```yaml
-workflows:
-  run-tests:
-    jobs:
-      ...
-      - build-docker:
-          requires:
-            - build_and_test
-            - dependency_vulnerability_scan
-          filters:
-            branches:
-              only: main
-      ...
-```
-
-Allow jobs fine grained access to credentials by using contexts. 
-
-- In your CircleCI `Organization Settings` tab, create a new context - `workshop_deployment-dev`.
-- Add your `HEROKU_API_KEY` environment variable to this context (same as before)
-- Specify `context` parameter in the workflow for the `deploy_to_heroku` job:
-
-```yaml
-workflows:
-  run-tests:
-    jobs:
-      ...
-      - deploy-to-heroku:
-          requires:
-            - build-docker
-          context: workshop_deployment-dev
-      ...
-```
-
-- You can now delete `HEROKU_API_KEY` in project settings environment variables!
-- Add approval job before deploying to Heroku:
-
-```yaml
-workflows:
-  run-tests:
-    jobs:
-      ...
-      - build-docker:
-          requires:
-            - build_and_test
-            - dependency_vulnerability_scan
-          filters:
-            branches:
-              only: main
-      - hold-for-approval:
-          type: approval
-          requires: 
-            - build-docker
-      - deploy-to-heroku:
-          requires:
-            - hold-for-approval
-          context: workshop_deployment-dev
-      ...
-```
-
-You can also specify a security group to a context (in an org) to only allow those users to continue.
-We can also have multiple deployment environments in different stages, using parameters and contexts.
-
-- Create a new Heroku application - `hello-circleci-connect-prod`
-- Add environment parameter to `deploy_to_heroku` job - `environment`:
-
-```yaml
-deploy-to-heroku:
-    parameters:
-      environment:
-        type: string
-        default: dev
-    ...
-```
-
-- Use the `environment` parameter in the Heroku deployment steps:
-
-```yaml
-  deploy-to-heroku:
-    ...
-    steps:
-      ...
-      - heroku/push-docker-image:
-          app-name: hello-circleci-connect-<< parameters.environment >>
-          process-types: web
-      - heroku/release-docker-image:
-          app-name: hello-circleci-connect-<< parameters.environment >>
-          process-types: web
-```
-
-- Add a new `deploy-to-heroku` job, that doesn't filter on branch to the workflow, and pass `dev` parameter to it:
-
-```yaml
-workflows:
-  run-tests:
-    jobs:
-      ...
-      - dependency_vulnerability_scan
-      - deploy-to-heroku:
-          context: workshop_deployment-dev
-          environment: dev
-      ...
-```
-
-- Add `prod` parameter to the "original" `deploy-to-heroku` job in the workflow:
-
-```yaml
-workflows:
-  run-tests:
-    jobs:
-      ...
-      - hold-for-approval:
-          type: approval
-          requires: 
-            - build-docker
-      - deploy-to-heroku:
-          environment: prod
-          requires:
-            - hold-for-approval
-          context: workshop_deployment-prod
-```
 
 ### Set up a nightly build to deploy dev version of the application
 

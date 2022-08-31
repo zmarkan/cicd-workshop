@@ -6,6 +6,11 @@ orbs:
   snyk: snyk/snyk@1.2.3
   terraform: circleci/terraform@3.0.0
 
+parameters:
+  scheduled:
+    type: boolean
+    default: false
+
 commands:
   install_doctl:
     parameters:
@@ -214,9 +219,9 @@ workflows:
   test_scan_deploy:
       jobs:
         - build_and_test:
-          matrix:
-            parameters:
-              node_version: ["16.16.0", "14.19.0", "17.6.0" ]
+            matrix:
+              parameters:
+                node_version: ["16.16.0", "14.19.0", "17.6.0" ]
         - dependency_vulnerability_scan:
             context:
               - cicd-workshop
@@ -248,5 +253,17 @@ workflows:
         - destroy_k8s_cluster:
             requires:
               - approve_destroy
+            context:
+              - cicd-workshop
+
+  nightly-build:
+    when: << pipeline.parameters.scheduled >>
+    jobs:
+      - build_and_test:
+          matrix:
+            parameters:
+              node_version: ["16.16.0", "14.19.0", "17.6.0" ]
+      - dependency_vulnerability_scan
+      - build_docker_image:
             context:
               - cicd-workshop
