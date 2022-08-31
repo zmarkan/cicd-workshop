@@ -110,8 +110,8 @@ We also have some tests, a security scan, building the image, provisioning the i
 
 #### Chapter 3 - Advanced CircleCI concepts
 
-- Running test in matrix across multiple versions
 - Using test splitting to tear down a long running test suite
+- Running test in matrix across multiple versions
 - Filtering pipelines on branches and tags
 - Scheduling pipelines and using pipeline parametres to drive the flow
 
@@ -746,6 +746,8 @@ To get to the starting point, run:
 
 This will copy over a bunch of long running tests to simulate your application growing. Commit and see that tests now run for around 5 minutes, much longer than before.
 
+### Employing parallelism - Test Splitting
+
 - To make our tests run faster we can try several things. My favourite is employing parallelism and run them across multiple parallel jobs. First introduce the parallelism value in `build_and_test` job:
 
 ```yaml
@@ -798,6 +800,42 @@ jobs:
 
 Commit and run the tests again and you will see them run in much less time!
 
+### Employing parallelism - running tests in a matrix
+
+We often want to test the same code across different variants of the application. We can employ matrix with CircleCI for that.
+
+- Create a new job parameter for `build_and_test` job, and use its value in the selected image:
+
+```yaml
+jobs:
+  build_and_test:
+    parameters:
+      node_version:
+        type: string
+        default: 16.16.0
+    docker:
+      - image: cimg/node:<< parameters.node_version >>
+    steps:
+      - checkout
+```
+
+- Pass matrix of versions as parameters for the job in the workflow definition:
+
+```yaml
+workflows:
+  run-tests:
+    jobs:
+      - build_and_test:
+          matrix:
+            parameters:
+              node_version: ["16.16.0", "14.19.0", "17.6.0" ]
+      - dependency_vulnerability_scan
+      ...
+```
+
+This sets up the tests to run in a matrix, in parallel. But we must go further. Our tests still run for too long, so we can split them across multiple jobs.
+
+### Test splitting
 
 
 👆 Done up to that point 👆
