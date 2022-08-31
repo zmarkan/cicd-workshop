@@ -25,18 +25,29 @@ jobs:
   build_and_test:
     docker:
       - image: cimg/node:16.16.0
+    parallelism: 4
     steps:
       - checkout
       - node/install-packages
       - run:
           name: Run tests
-          command: npm run test-ci
+          command: |
+            echo $(circleci tests glob "test/**/*.test.js")
+            circleci tests glob "test/**/*.test.js" | circleci tests split |
+            xargs npm run test-ci
       - run:
           name: Copy tests results for storing
           command: |
             mkdir test-results
             cp test-results.xml test-results/
           when: always
+      - run:
+          name: Process test report
+          command: |
+            # Convert absolute paths to relative to support splitting tests by timing
+            if [ -e test-results.xml ]; then
+              sed -i "s|`pwd`/||g" test-results.xml
+            fi
       - store_test_results:
           path: test-results
       - store_artifacts:

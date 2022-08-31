@@ -734,7 +734,70 @@ The `approve_destroy` had a special type set - `approval` which means we don't h
 🎉 Congratulations! You have reached to the end of chapter 2 with a fully fledged Kubernetes provisioning and deployment in a CI/CD pipeline!
 
 
-## Chapter 3 - Advanced CI/CD
+## Chapter 3 - Advanced CI/CD 
+
+Let's pretend a few months have passed, you have been working on your application for a while and noticed the tests now run a lot longer than they used to! In this chapter we will be focusing on improving the pipeline itself.
+
+To get to the starting point, run:
+
+```bash
+./scripts/do_3.sh 
+```
+
+This will copy over a bunch of long running tests to simulate your application growing. Commit and see that tests now run for around 5 minutes, much longer than before.
+
+- To make our tests run faster we can try several things. My favourite is employing parallelism and run them across multiple parallel jobs. First introduce the parallelism value in `build_and_test` job:
+
+```yaml
+jobs:
+  build_and_test:
+    docker:
+      - image: cimg/node:16.16.0
+    parallelism: 4
+    steps:
+      ...
+
+```
+
+This tells CircleCI to spin up 4 parallel jobs. Now we need to change the run script to only run a subset of all the tests in each job, and then collate the results:
+
+```yaml
+jobs:
+  build_and_test:
+    docker:
+      - image: cimg/node:16.16.0
+    parallelism: 4
+    steps:
+      - checkout
+      - node/install-packages
+      - run:
+          name: Run tests
+          command: |
+            echo $(circleci tests glob "test/**/*.test.js")
+            circleci tests glob "test/**/*.test.js" | circleci tests split |
+            xargs npm run test-ci
+      - run:
+          name: Copy tests results for storing
+          command: |
+            mkdir test-results
+            cp test-results.xml test-results/
+          when: always
+      - run:
+          name: Process test report
+          command: |
+            # Convert absolute paths to relative to support splitting tests by timing
+            if [ -e test-results.xml ]; then
+              sed -i "s|`pwd`/||g" test-results.xml
+            fi
+      - store_test_results:
+          path: test-results
+      - store_artifacts:
+          path: test-results
+
+```
+
+Commit and run the tests again and you will see them run in much less time!
+
 
 
 👆 Done up to that point 👆
