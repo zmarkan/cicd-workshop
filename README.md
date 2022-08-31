@@ -12,7 +12,10 @@ Fork this project! You will need a GitHub account.
 
 This project can run on your machine if you have the correct dependencies installed (Git, Terraform, DigitalOcean CLI, Node.js), or it can also run in a cloud based environment using Gitpod (we recommend Gitpod for best experience).
 
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/zmarkan/cicd-workshop)
+To open this in Gitpod, copy your fork's GitHub URL, and combine it with this Gitpod prefix - `https://gitpod.io/#` and open it in a new tab.
+
+The full URL should look something like this: `https://gitpod.io/#/https://github.com/YOUR_GITHUB_USERNAME/cicd-workshop`.
+
 
 This lets you spin up an environment with all the dependencies preinstalled, remotely connect to it, and work on it as it was on your machine. This is much faster, believe us, we measured it with science. 
 
