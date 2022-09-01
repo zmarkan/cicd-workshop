@@ -113,9 +113,9 @@ We also have some tests, a security scan, building the image, provisioning the i
 
 #### Chapter 3 - Advanced CircleCI concepts
 
+- Filtering pipelines on branches and tags
 - Using test splitting to tear down a long running test suite
 - Running test in matrix across multiple versions
-- Filtering pipelines on branches and tags
 - Scheduling pipelines and using pipeline parametres to drive the flow
 
 #### Chapter 4 - Using Dynamic Configuration to select what gets built when
@@ -340,6 +340,8 @@ orbs:
   docker: circleci/docker@2.1.1
   snyk: snyk/snyk@1.2.3
 ```
+
+Note: if you push this, you are likely to see the pipeline fail. This is because the Snyk orb comes from a third-party, developed by Snyk themselves. This is a security feature that you can overcome by opting in to partner and community orbs in your organisation settings - security.
 
 - Add dependency vulnerability scan job:
 
@@ -751,6 +753,32 @@ To get to the starting point, run:
 
 This will copy over a bunch of long running tests to simulate your application growing. Commit and see that tests now run for around 5 minutes, much longer than before.
 
+### Choosing what gets run by filtering branches
+
+We sometimes don't want to run the entire pipeline on every commit - maybe we only want to conduct the deployment when merging into the `main` branch, but not on feature branches. Let's do that now.
+
+Add a `filters` section to your cluster creation step:
+
+```yaml
+workflows:
+  run-tests:
+    jobs:
+      ...
+      - create_do_k8s_cluster:
+          requires:
+            - dependency_vulnerability_scan
+            - build_docker_image
+            - build_and_test
+          context:
+            - cicd-workshop
+          filters:
+            branches:
+              only: main
+      ...
+```
+
+While you are on a non `main` branch, you will always skip the infrastructure provisioning and deployment jobs. This will have the extra benefit of making your build times much shorter during this workshop :) 
+
 ### Employing parallelism - splitting long running tests
 
 - To make our tests run faster we can try several things. My favourite is employing parallelism and run them across multiple parallel jobs. First introduce the parallelism value in `build_and_test` job:
@@ -835,30 +863,6 @@ workflows:
             parameters:
               node_version: ["16.16.0", "14.19.0", "17.6.0" ]
       - dependency_vulnerability_scan
-      ...
-```
-
-### Choosing what gets run by filtering branches
-
-We sometimes don't want to run the entire pipeline on every commit - maybe we only want to conduct the deployment when merging into the `main` branch, but not on feature branches.
-
-Add a `filters` section to your cluster creation step:
-
-```yaml
-workflows:
-  run-tests:
-    jobs:
-      ...
-      - create_do_k8s_cluster:
-          requires:
-            - dependency_vulnerability_scan
-            - build_docker_image
-            - build_and_test
-          context:
-            - cicd-workshop
-          filters:
-            branches:
-              only: main
       ...
 ```
 
