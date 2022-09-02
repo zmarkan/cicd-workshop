@@ -13,11 +13,12 @@ tasks:
           :
         else
           echo "ssh key exists!"
-          echo $github_ssh_key >> ~/.ssh/id_rsa 
-          echo $github_ssh_key_pub >> ~/.ssh/id_rsa.pub
+          echo $github_ssh_key_base64 | tr " " "\n" | base64 --decode >> ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
           eval "$(ssh-agent -s)"
           ssh-add ~/.ssh/id_rsa
       fi
+    command: echo "before may have run I guess?"
 
   - name: Install Terraform CLI
     init: |
