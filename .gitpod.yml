@@ -16,4 +16,16 @@ tasks:
   - name: Prepare credentials file
     init: |
       cp scripts/util/credentials.sample.toml credentials.toml
+  - name: Check if SSH env vars exist and set them
+    before: |
+      if [ -z ${github_ssh_key+x} ]; 
+        then
+          # var does not exist 
+          :
+        else
+          echo $github_ssh_key >> ~/.ssh/id_rsa 
+          echo $github_ssh_key_pub >> ~/.ssh/id_rsa.pub
+          eval "$(ssh-agent -s)"
+          ssh-add ~/.ssh/id_rsa
+      fi
 
