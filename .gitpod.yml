@@ -18,11 +18,14 @@ tasks:
       cp scripts/util/credentials.sample.toml credentials.toml
   - name: Check if SSH env vars exist and set them
     before: |
+      echo "check for ssh key env var"
       if [ -z ${github_ssh_key+x} ]; 
         then
+          echo "ssh key does not exist"
           # var does not exist 
           :
         else
+          echo "ssh key exists!"
           echo $github_ssh_key >> ~/.ssh/id_rsa 
           echo $github_ssh_key_pub >> ~/.ssh/id_rsa.pub
           eval "$(ssh-agent -s)"
