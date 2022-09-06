@@ -3,7 +3,7 @@
 rm -f .circleci/continue_config.yml
 
 # cp scripts/do/README.md .
-cp -f scripts/do/configs/config_4.yml ./circleci/config.yml
+cp -f scripts/do/configs/config_4.yml .circleci/config.yml
 
 
 # Copy over test files
