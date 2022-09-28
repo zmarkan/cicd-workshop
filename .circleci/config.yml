@@ -271,3 +271,4 @@ workflows:
       - build_docker_image:
           context:
             - cicd-workshop
+            
