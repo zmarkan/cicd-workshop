@@ -84,7 +84,7 @@ jobs:
       - checkout
       - node/install-packages
       - snyk/scan:
-          fail-on-issues: true
+          fail-on-issues: false
           monitor-on-build: false
 
   create_do_k8s_cluster:
