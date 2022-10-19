@@ -224,12 +224,21 @@ workflows:
             matrix:
               parameters:
                 node_version: ["16.16.0", "14.19.0", "17.6.0" ]
+            filters:
+              tags:
+                only: /^v.*/
         - dependency_vulnerability_scan:
             context:
               - cicd-workshop
+            filters:
+              tags:
+                only: /^v.*/
         - build_docker_image:
             context:
               - cicd-workshop
+            filters:
+              tags:
+                only: /^v.*/
         - create_do_k8s_cluster:
             requires:
               - dependency_vulnerability_scan
@@ -240,6 +249,8 @@ workflows:
             filters:
               branches:
                 only: main
+              tags:
+                only: /^v.*/
         - deploy_to_k8s:
             requires:
               - create_do_k8s_cluster
