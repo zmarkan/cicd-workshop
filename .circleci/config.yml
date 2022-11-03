@@ -2,9 +2,9 @@ version: 2.1
 
 orbs:
   node: circleci/node@5.0.2
-  docker: circleci/docker@2.1.1
-  snyk: snyk/snyk@1.2.3
-  terraform: circleci/terraform@3.0.0
+  docker: circleci/docker@2.1.4
+  snyk: snyk/snyk@1.4.0
+  terraform: circleci/terraform@3.2.0
 
 parameters:
   scheduled:
@@ -282,3 +282,5 @@ workflows:
       - build_docker_image:
           context:
             - cicd-workshop
+
+# VS Code Extension Version: 1.0.1
