@@ -86,7 +86,6 @@ jobs:
       - snyk/scan:
           fail-on-issues: true
           monitor-on-build: false
-          severity-threshold: high
 
   create_do_k8s_cluster:
     docker:
